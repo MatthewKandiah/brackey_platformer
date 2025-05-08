@@ -12,12 +12,12 @@ IMAGE_BASE_PATH :: "brackeys_platformer_assets/sprites/"
 // TODO-Matt: write uv coordinates for each sprite to a file
 
 main :: proc() {
-  decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_idle", 32, 32, 0, 4)
-  decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_run_1", 32, 32, 2, 8)
-  decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_run_2", 32, 32, 3, 8)
-  decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_roll", 32, 32, 5, 8)
+	decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_idle", 32, 32, 0, 4)
+	decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_run_1", 32, 32, 2, 8)
+	decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_run_2", 32, 32, 3, 8)
+	decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_roll", 32, 32, 5, 8)
 	decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_hit", 32, 32, 6, 4)
-  decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_death", 32, 32, 7, 4)
+	decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_death", 32, 32, 7, 4)
 }
 
 // TODO-Matt: trim empty margin around sprite
@@ -68,8 +68,8 @@ decompose :: proc(
 			raw_data(output_data),
 			4 * cast(i32)sprite_width_pixels,
 		); res == 0 {
-      fmt.println("output_file: ", output_file)
-      panic("failed to write image to file")
-    }
+			fmt.println("output_file: ", output_file)
+			panic("failed to write image to file")
+		}
 	}
 }
