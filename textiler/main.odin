@@ -48,13 +48,16 @@ decompose :: proc(
 	output_data := make([]u8, 4 * sprite_width_pixels * sprite_height_pixels)
 	for sprite_idx in 0 ..< sprite_count {
 		for row_idx in 0 ..< sprite_height_pixels {
-			for byte_idx in 0 ..< 4 * sprite_width_pixels {
-				output_idx := 4 * (row_idx * sprite_width_pixels) + byte_idx
+			for col_idx in 0 ..< sprite_width_pixels {
+				output_idx := 4 * (row_idx * sprite_width_pixels + col_idx)
 				input_idx :=
-					4 * input_width * cast(i32)(row_num * sprite_height_pixels + row_idx) +
-					4 * cast(i32)(sprite_idx * sprite_width_pixels) +
-					cast(i32)byte_idx
-				output_data[output_idx] = input_data[input_idx]
+					4 *
+					(input_width * cast(i32)(row_num * sprite_height_pixels + row_idx) +
+							cast(i32)(sprite_idx * sprite_width_pixels + col_idx))
+				output_data[output_idx + 0] = input_data[input_idx + 0]
+				output_data[output_idx + 1] = input_data[input_idx + 1]
+				output_data[output_idx + 2] = input_data[input_idx + 2]
+				output_data[output_idx + 3] = input_data[input_idx + 3]
 			}
 		}
 
