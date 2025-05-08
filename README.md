@@ -12,6 +12,6 @@ Let's build a more thought through game using [Brackeys' Platformer Bundle](http
 
 # Plan
 - Want to turn the various sprite assets into a single texture image. Think it might be best to first split the spritesheets into separate images, use a sensible naming convention to group and order animation sequences, then pack them into a single texture image and output the uv coordinates for each image to a file to be read in by the main file
-- Want to render text too, probably going to use a similar strategy to the image spritesheets. Generate an image for each character we need (A-Z, 0-9, some basic punctuation) and pack into that same texture image, outputting uv coordinates to file
+- Want to render text too, probably going to use a similar strategy to the image spritesheets. Generate an image for each character we need (A-Z, 0-9, some basic punctuation) and pack into that same texture image, outputting uv coordinates to file (or possibly output to a different texture, intended to be used with an override colour, so we can write text in different colours easily?)
 - Use unnormalised coordinate texture, nearest-neighbor interpolation and zero anti-aliasing for neat sprite drawing
 - Draw a guy going through an idle animatino on the screen, then work out how we're going to do everything else from there
