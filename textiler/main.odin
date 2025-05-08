@@ -7,6 +7,11 @@ import stbi "vendor:stb/image"
 
 IMAGE_BASE_PATH :: "brackeys_platformer_assets/sprites/"
 
+/*
+  am I overthinking this? Would it be better to just make each spritesheet into a texture and get that working?
+  the wasted space on the spritesheets wastes a little bit of memory, but the total size is so small I don't think it should be a problem
+*/
+
 // TODO-Matt: decompose input image row into separate images
 // TODO-Matt: combine a set of images into a single texture image
 // TODO-Matt: write uv coordinates for each sprite to a file
@@ -18,11 +23,39 @@ main :: proc() {
 	decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_roll", 32, 32, 5, 8)
 	decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_hit", 32, 32, 6, 4)
 	decompose(IMAGE_BASE_PATH + "knight.png", "debug/knight_death", 32, 32, 7, 4)
+	decompose(IMAGE_BASE_PATH + "coin.png", "debug/coin", 16, 16, 0, 12)
+	decompose(IMAGE_BASE_PATH + "fruit.png", "debug/fruit_green", 16, 16, 0, 3)
+	decompose(IMAGE_BASE_PATH + "fruit.png", "debug/fruit_yellow", 16, 16, 1, 3)
+	decompose(IMAGE_BASE_PATH + "fruit.png", "debug/fruit_pink", 16, 16, 2, 3)
+	decompose(IMAGE_BASE_PATH + "fruit.png", "debug/fruit_red", 16, 16, 3, 3)
+	decompose(IMAGE_BASE_PATH + "platforms.png", "debug/platform_green", 16, 16, 0, 3)
+	decompose(IMAGE_BASE_PATH + "platforms.png", "debug/platform_brown", 16, 16, 1, 3)
+	decompose(IMAGE_BASE_PATH + "platforms.png", "debug/platform_yellow", 16, 16, 2, 3)
+	decompose(IMAGE_BASE_PATH + "platforms.png", "debug/platform_blue", 16, 16, 3, 3)
+	decompose(IMAGE_BASE_PATH + "slime_green.png", "debug/slime_green_1", 24, 24, 0, 4)
+	decompose(IMAGE_BASE_PATH + "slime_green.png", "debug/slime_green_2", 24, 24, 1, 4)
+	decompose(IMAGE_BASE_PATH + "slime_green.png", "debug/slime_green_3", 24, 24, 2, 4)
+	decompose(IMAGE_BASE_PATH + "slime_purple.png", "debug/slime_purple_1", 24, 24, 0, 4)
+	decompose(IMAGE_BASE_PATH + "slime_purple.png", "debug/slime_purple_2", 24, 24, 1, 4)
+	decompose(IMAGE_BASE_PATH + "slime_purple.png", "debug/slime_purple_3", 24, 24, 2, 4)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_1", 16, 16, 0, 12)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_2", 16, 16, 1, 12)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_3", 16, 16, 2, 12)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_4", 16, 16, 3, 10)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_5", 16, 16, 4, 10)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_6", 16, 16, 5, 9)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_7", 16, 16, 6, 9)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_8", 16, 16, 7, 9)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_9", 16, 16, 8, 9)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_10", 16, 16, 9, 8)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_11", 16, 16, 10, 7)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_12", 16, 16, 11, 6)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_13", 16, 16, 12, 5)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_14", 16, 16, 13, 6)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_15", 16, 16, 14, 5)
+	decompose(IMAGE_BASE_PATH + "world_tileset.png", "debug/world_tiles_16", 16, 16, 15, 4)
 }
 
-// TODO-Matt: trim empty margin around sprite
-// don't think we can automate this, we could trim to the smallest quad we can by trimming completely transparent rows and columns, but I'm planning to render entities with a fixed sized quad which we'll apply these textures to. If an entity ducks, we want a texture with some transparent space at the top of it. If we trim that empty space, the ducking sprite will stretch upwards to fill the quad and it will look broken!
-// so probably need to pass in margin-top,bottom,left,right ?
 decompose :: proc(
 	original_file: cstring,
 	output_file_prefix: string,
