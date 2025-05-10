@@ -1,15 +1,20 @@
-build: build-textiler build-main
+default: run-debug
 
 run: build
-	./textiler.bin
 	./main.bin
 
-build-textiler:
-	odin build textiler
+run-debug: build-debug
+	./main.bin
 
-build-main:
+build:
 	odin build main
+	glslc shaders/shader.vert -o vert.spv
+	glslc shaders/shader.frag -o frag.spv
+
+build-debug:
+	odin build main -debug
+	glslc shaders/shader.vert -g -o vert.spv
+	glslc shaders/shader.frag -g -o frag.spv
 
 clean:
 	rm main.bin
-	rm textiler.bin
