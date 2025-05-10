@@ -29,37 +29,36 @@ vertex_input_attribute_description := vk.VertexInputAttributeDescription {
   binding = 0, location = 0, format = .R32G32_SFLOAT, offset = cast(u32)offset_of(Vertex, pos)
 }
 
-// TODO-Matt: rename swapchain extent -> surface extent?
 Renderer :: struct {
-	window:                 glfw.WindowHandle,
-	surface:                vk.SurfaceKHR,
-	physical_device:        vk.PhysicalDevice,
-  command_buffers:        [MAX_FRAMES_IN_FLIGHT]vk.CommandBuffer,
 	command_pool:           vk.CommandPool,
 	device:                 vk.Device,
 	graphics_pipeline:      vk.Pipeline,
-	queue_family_index:     u32,
-	queue:                  vk.Queue,
-	render_pass:            vk.RenderPass,
+	index_buffer:           vk.Buffer,
+	index_buffer_mapped:    rawptr,
+	index_buffer_memory:    vk.DeviceMemory,
+	physical_device:        vk.PhysicalDevice,
 	pipeline_layout:        vk.PipelineLayout,
+	queue:                  vk.Queue,
+	queue_family_index:     u32,
+	render_pass:            vk.RenderPass,
+	surface:                vk.SurfaceKHR,
+	surface_extent:       vk.Extent2D,
 	surface_format:         vk.SurfaceFormatKHR,
 	surface_present_mode:   vk.PresentModeKHR,
 	swapchain:              vk.SwapchainKHR,
-	swapchain_extent:       vk.Extent2D,
 	swapchain_framebuffers: []vk.Framebuffer,
-  swapchain_image_index: u32,
 	swapchain_image_views:  []vk.ImageView,
 	swapchain_images:       []vk.Image,
 	vertex_buffer:          vk.Buffer,
-	vertex_buffer_memory:   vk.DeviceMemory,
 	vertex_buffer_mapped:   rawptr,
-	index_buffer:           vk.Buffer,
-	index_buffer_memory:    vk.DeviceMemory,
-	index_buffer_mapped:    rawptr,
+	vertex_buffer_memory:   vk.DeviceMemory,
+	window:                 glfw.WindowHandle,
+  command_buffers:        [MAX_FRAMES_IN_FLIGHT]vk.CommandBuffer,
+  frame_index: u32,
+  swapchain_image_index: u32,
   sync_fences_in_flight: [MAX_FRAMES_IN_FLIGHT]vk.Fence,
   sync_semaphores_image_available: [MAX_FRAMES_IN_FLIGHT]vk.Semaphore,
   sync_semaphores_render_finished: [MAX_FRAMES_IN_FLIGHT]vk.Semaphore,
-  frame_index: u32,
 }
 
 draw_frame :: proc(renderer: ^Renderer) {
@@ -91,7 +90,7 @@ draw_frame :: proc(renderer: ^Renderer) {
     sType = .RENDER_PASS_BEGIN_INFO,
     renderPass = renderer.render_pass,
     framebuffer = renderer.swapchain_framebuffers[renderer.swapchain_image_index],
-    renderArea = vk.Rect2D{offset = {0,0}, extent = renderer.swapchain_extent},
+    renderArea = vk.Rect2D{offset = {0,0}, extent = renderer.surface_extent},
     clearValueCount = 1,
     pClearValues = &clear_value,
   }
@@ -115,15 +114,15 @@ draw_frame :: proc(renderer: ^Renderer) {
   viewport := vk.Viewport {
     x = 0,
     y = 0,
-    width = cast(f32)renderer.swapchain_extent.width,
-    height = cast(f32)renderer.swapchain_extent.height,
+    width = cast(f32)renderer.surface_extent.width,
+    height = cast(f32)renderer.surface_extent.height,
     minDepth = 0,
     maxDepth = 1,
   }
   vk.CmdSetViewport(renderer.command_buffers[renderer.frame_index], 0,1, &viewport)
   scissor := vk.Rect2D {
     offset = {0,0},
-    extent = renderer.swapchain_extent,
+    extent = renderer.surface_extent,
   }
   vk.CmdSetScissor(renderer.command_buffers[renderer.frame_index], 0,1, &scissor)
   vk.CmdDrawIndexed(renderer.command_buffers[renderer.frame_index], cast(u32)len(indices), 1,0,0,0)
@@ -764,10 +763,10 @@ setup_new_swapchain :: proc(renderer: ^Renderer) {
 					surface_capabilities.maxImageExtent.height,
 				),
 			}
-			renderer.swapchain_extent = extent
+			renderer.surface_extent = extent
 		} else {
 			// default case, set swapchain extent to match the screens current extent
-			renderer.swapchain_extent = surface_capabilities.currentExtent
+			renderer.surface_extent = surface_capabilities.currentExtent
 		}
 	}
 
@@ -779,7 +778,7 @@ setup_new_swapchain :: proc(renderer: ^Renderer) {
 			imageFormat      = renderer.surface_format.format,
 			imageColorSpace  = renderer.surface_format.colorSpace,
 			presentMode      = renderer.surface_present_mode,
-			imageExtent      = renderer.swapchain_extent,
+			imageExtent      = renderer.surface_extent,
 			minImageCount    = surface_capabilities.minImageCount + 1,
 			imageUsage       = {.COLOR_ATTACHMENT},
 			imageArrayLayers = 1,
@@ -850,8 +849,8 @@ setup_new_framebuffers :: proc(renderer: ^Renderer) {
 			renderPass      = renderer.render_pass,
 			attachmentCount = 1,
 			pAttachments    = &renderer.swapchain_image_views[i],
-			width           = renderer.swapchain_extent.width,
-			height          = renderer.swapchain_extent.height,
+			width           = renderer.surface_extent.width,
+			height          = renderer.surface_extent.height,
 			layers          = 1,
 		}
 		if vk.CreateFramebuffer(
