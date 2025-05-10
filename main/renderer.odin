@@ -26,148 +26,177 @@ vertex_input_binding_description := vk.VertexInputBindingDescription {
 }
 
 vertex_input_attribute_description := vk.VertexInputAttributeDescription {
-  binding = 0, location = 0, format = .R32G32_SFLOAT, offset = cast(u32)offset_of(Vertex, pos)
+	binding  = 0,
+	location = 0,
+	format   = .R32G32_SFLOAT,
+	offset   = cast(u32)offset_of(Vertex, pos),
 }
 
 Renderer :: struct {
-	command_pool:           vk.CommandPool,
-	device:                 vk.Device,
-	graphics_pipeline:      vk.Pipeline,
-	index_buffer:           vk.Buffer,
-	index_buffer_mapped:    rawptr,
-	index_buffer_memory:    vk.DeviceMemory,
-	physical_device:        vk.PhysicalDevice,
-	pipeline_layout:        vk.PipelineLayout,
-	queue:                  vk.Queue,
-	queue_family_index:     u32,
-	render_pass:            vk.RenderPass,
-	surface:                vk.SurfaceKHR,
-	surface_extent:       vk.Extent2D,
-	surface_format:         vk.SurfaceFormatKHR,
-	surface_present_mode:   vk.PresentModeKHR,
-	swapchain:              vk.SwapchainKHR,
-	swapchain_framebuffers: []vk.Framebuffer,
-	swapchain_image_views:  []vk.ImageView,
-	swapchain_images:       []vk.Image,
-	vertex_buffer:          vk.Buffer,
-	vertex_buffer_mapped:   rawptr,
-	vertex_buffer_memory:   vk.DeviceMemory,
-	window:                 glfw.WindowHandle,
-  command_buffers:        [MAX_FRAMES_IN_FLIGHT]vk.CommandBuffer,
-  frame_index: u32,
-  swapchain_image_index: u32,
-  sync_fences_in_flight: [MAX_FRAMES_IN_FLIGHT]vk.Fence,
-  sync_semaphores_image_available: [MAX_FRAMES_IN_FLIGHT]vk.Semaphore,
-  sync_semaphores_render_finished: [MAX_FRAMES_IN_FLIGHT]vk.Semaphore,
+	command_pool:                    vk.CommandPool,
+	device:                          vk.Device,
+	graphics_pipeline:               vk.Pipeline,
+	index_buffers:                   [MAX_FRAMES_IN_FLIGHT]vk.Buffer,
+	index_buffers_mapped:            [MAX_FRAMES_IN_FLIGHT]rawptr,
+	index_buffers_memory:            [MAX_FRAMES_IN_FLIGHT]vk.DeviceMemory,
+	physical_device:                 vk.PhysicalDevice,
+	pipeline_layout:                 vk.PipelineLayout,
+	queue:                           vk.Queue,
+	queue_family_index:              u32,
+	render_pass:                     vk.RenderPass,
+	surface:                         vk.SurfaceKHR,
+	surface_extent:                  vk.Extent2D,
+	surface_format:                  vk.SurfaceFormatKHR,
+	surface_present_mode:            vk.PresentModeKHR,
+	swapchain:                       vk.SwapchainKHR,
+	swapchain_framebuffers:          []vk.Framebuffer,
+	swapchain_image_views:           []vk.ImageView,
+	swapchain_images:                []vk.Image,
+	vertex_buffers:                  [MAX_FRAMES_IN_FLIGHT]vk.Buffer,
+	vertex_buffers_mapped:           [MAX_FRAMES_IN_FLIGHT]rawptr,
+	vertex_buffers_memory:           [MAX_FRAMES_IN_FLIGHT]vk.DeviceMemory,
+	window:                          glfw.WindowHandle,
+	command_buffers:                 [MAX_FRAMES_IN_FLIGHT]vk.CommandBuffer,
+	frame_index:                     u32,
+	swapchain_image_index:           u32,
+	sync_fences_in_flight:           [MAX_FRAMES_IN_FLIGHT]vk.Fence,
+	sync_semaphores_image_available: [MAX_FRAMES_IN_FLIGHT]vk.Semaphore,
+	sync_semaphores_render_finished: [MAX_FRAMES_IN_FLIGHT]vk.Semaphore,
 }
 
 draw_frame :: proc(renderer: ^Renderer) {
-  vk.WaitForFences(renderer.device, 1, &renderer.sync_fences_in_flight[renderer.frame_index], true, max(u64))
-  acquire_next_image_res := vk.AcquireNextImageKHR(
-    renderer.device,
-    renderer.swapchain,
-    max(u64),
-    renderer.sync_semaphores_image_available[renderer.frame_index],
-    0,
-    &renderer.swapchain_image_index,
-  )
-  if acquire_next_image_res == .ERROR_OUT_OF_DATE_KHR {
-    recreate_swapchain(renderer)
-    return
-  }
-  vk.ResetFences(renderer.device, 1, &renderer.sync_fences_in_flight[renderer.frame_index])
-  vk.ResetCommandBuffer(renderer.command_buffers[renderer.frame_index], {})
-  command_buffer_begin_info := vk.CommandBufferBeginInfo {
-    sType = .COMMAND_BUFFER_BEGIN_INFO,
-  }
-  if vk.BeginCommandBuffer(renderer.command_buffers[renderer.frame_index], &command_buffer_begin_info) != .SUCCESS {
-    panic("failed to begin recording command buffer")
-  }
-  clear_value := vk.ClearValue {
-    color = {float32 = {0,0,0,1}},
-  }
-  render_pass_begin_info := vk.RenderPassBeginInfo {
-    sType = .RENDER_PASS_BEGIN_INFO,
-    renderPass = renderer.render_pass,
-    framebuffer = renderer.swapchain_framebuffers[renderer.swapchain_image_index],
-    renderArea = vk.Rect2D{offset = {0,0}, extent = renderer.surface_extent},
-    clearValueCount = 1,
-    pClearValues = &clear_value,
-  }
-  vk.CmdBeginRenderPass(renderer.command_buffers[renderer.frame_index], &render_pass_begin_info, .INLINE)
-  vk.CmdBindPipeline(renderer.command_buffers[renderer.frame_index], .GRAPHICS, renderer.graphics_pipeline)
-  vertex_buffers := []vk.Buffer{renderer.vertex_buffer}
-  offsets := []vk.DeviceSize{0}
-  vk.CmdBindVertexBuffers(
-    renderer.command_buffers[renderer.frame_index],
-    0,
-    1,
-    raw_data(vertex_buffers),
-    raw_data(offsets),
-  )
-  vk.CmdBindIndexBuffer(
-    renderer.command_buffers[renderer.frame_index],
-    renderer.index_buffer,
-    0,
-    .UINT32,
-  )
-  viewport := vk.Viewport {
-    x = 0,
-    y = 0,
-    width = cast(f32)renderer.surface_extent.width,
-    height = cast(f32)renderer.surface_extent.height,
-    minDepth = 0,
-    maxDepth = 1,
-  }
-  vk.CmdSetViewport(renderer.command_buffers[renderer.frame_index], 0,1, &viewport)
-  scissor := vk.Rect2D {
-    offset = {0,0},
-    extent = renderer.surface_extent,
-  }
-  vk.CmdSetScissor(renderer.command_buffers[renderer.frame_index], 0,1, &scissor)
-  vk.CmdDrawIndexed(renderer.command_buffers[renderer.frame_index], cast(u32)len(indices), 1,0,0,0)
-  vk.CmdEndRenderPass(renderer.command_buffers[renderer.frame_index])
-  if vk.EndCommandBuffer(renderer.command_buffers[renderer.frame_index]) != .SUCCESS {
-    panic("failed to end command buffer")
-  }
-  wait_stages := []vk.PipelineStageFlags{{.COLOR_ATTACHMENT_OUTPUT}}
-  submit_info := vk.SubmitInfo {
-    sType = .SUBMIT_INFO,
-    waitSemaphoreCount = 1,
-    pWaitSemaphores = &renderer.sync_semaphores_image_available[renderer.frame_index],
-    pWaitDstStageMask = raw_data(wait_stages),
-    commandBufferCount = 1,
-    pCommandBuffers = &renderer.command_buffers[renderer.frame_index],
-    signalSemaphoreCount = 1,
-    pSignalSemaphores = &renderer.sync_semaphores_render_finished[renderer.frame_index],
-  }
-  if vk.QueueSubmit(
-    renderer.queue,
-    1,
-    &submit_info,
-    renderer.sync_fences_in_flight[renderer.frame_index],
-  ) != .SUCCESS {
-    panic("failed to submit draw commands to graphics queue")
-  }
-  present_info := vk.PresentInfoKHR {
-    sType = .PRESENT_INFO_KHR,
-    waitSemaphoreCount = 1,
-    pWaitSemaphores = &renderer.sync_semaphores_render_finished[renderer.frame_index],
-    swapchainCount = 1,
-    pSwapchains = &renderer.swapchain,
-    pImageIndices = &renderer.swapchain_image_index,
-  }
-  present_res := vk.QueuePresentKHR(renderer.queue, &present_info)
-  if present_res == .ERROR_OUT_OF_DATE_KHR ||
-     present_res == .SUBOPTIMAL_KHR ||
-     gc.framebuffer_resized {
-    gc.framebuffer_resized = false
-    recreate_swapchain(renderer)
-  } else if present_res != .SUCCESS {
-    panic("failed to present swapchain image")
-  }
-  renderer.frame_index += 1
-  renderer.frame_index %= MAX_FRAMES_IN_FLIGHT
+	vk.WaitForFences(
+		renderer.device,
+		1,
+		&renderer.sync_fences_in_flight[renderer.frame_index],
+		true,
+		max(u64),
+	)
+	acquire_next_image_res := vk.AcquireNextImageKHR(
+		renderer.device,
+		renderer.swapchain,
+		max(u64),
+		renderer.sync_semaphores_image_available[renderer.frame_index],
+		0,
+		&renderer.swapchain_image_index,
+	)
+	if acquire_next_image_res == .ERROR_OUT_OF_DATE_KHR {
+		recreate_swapchain(renderer)
+		return
+	}
+	vk.ResetFences(renderer.device, 1, &renderer.sync_fences_in_flight[renderer.frame_index])
+	vk.ResetCommandBuffer(renderer.command_buffers[renderer.frame_index], {})
+	command_buffer_begin_info := vk.CommandBufferBeginInfo {
+		sType = .COMMAND_BUFFER_BEGIN_INFO,
+	}
+	if vk.BeginCommandBuffer(
+		   renderer.command_buffers[renderer.frame_index],
+		   &command_buffer_begin_info,
+	   ) !=
+	   .SUCCESS {
+		panic("failed to begin recording command buffer")
+	}
+	clear_value := vk.ClearValue {
+		color = {float32 = {0, 0, 0, 1}},
+	}
+	render_pass_begin_info := vk.RenderPassBeginInfo {
+		sType = .RENDER_PASS_BEGIN_INFO,
+		renderPass = renderer.render_pass,
+		framebuffer = renderer.swapchain_framebuffers[renderer.swapchain_image_index],
+		renderArea = vk.Rect2D{offset = {0, 0}, extent = renderer.surface_extent},
+		clearValueCount = 1,
+		pClearValues = &clear_value,
+	}
+	vk.CmdBeginRenderPass(
+		renderer.command_buffers[renderer.frame_index],
+		&render_pass_begin_info,
+		.INLINE,
+	)
+	vk.CmdBindPipeline(
+		renderer.command_buffers[renderer.frame_index],
+		.GRAPHICS,
+		renderer.graphics_pipeline,
+	)
+	vertex_buffers := []vk.Buffer{renderer.vertex_buffers[renderer.frame_index]}
+	offsets := []vk.DeviceSize{0}
+	vk.CmdBindVertexBuffers(
+		renderer.command_buffers[renderer.frame_index],
+		0,
+		1,
+		raw_data(vertex_buffers),
+		raw_data(offsets),
+	)
+	vk.CmdBindIndexBuffer(
+		renderer.command_buffers[renderer.frame_index],
+		renderer.index_buffers[renderer.frame_index],
+		0,
+		.UINT32,
+	)
+	viewport := vk.Viewport {
+		x        = 0,
+		y        = 0,
+		width    = cast(f32)renderer.surface_extent.width,
+		height   = cast(f32)renderer.surface_extent.height,
+		minDepth = 0,
+		maxDepth = 1,
+	}
+	vk.CmdSetViewport(renderer.command_buffers[renderer.frame_index], 0, 1, &viewport)
+	scissor := vk.Rect2D {
+		offset = {0, 0},
+		extent = renderer.surface_extent,
+	}
+	vk.CmdSetScissor(renderer.command_buffers[renderer.frame_index], 0, 1, &scissor)
+	vk.CmdDrawIndexed(
+		renderer.command_buffers[renderer.frame_index],
+		cast(u32)len(indices),
+		1,
+		0,
+		0,
+		0,
+	)
+	vk.CmdEndRenderPass(renderer.command_buffers[renderer.frame_index])
+	if vk.EndCommandBuffer(renderer.command_buffers[renderer.frame_index]) != .SUCCESS {
+		panic("failed to end command buffer")
+	}
+	wait_stages := []vk.PipelineStageFlags{{.COLOR_ATTACHMENT_OUTPUT}}
+	submit_info := vk.SubmitInfo {
+		sType                = .SUBMIT_INFO,
+		waitSemaphoreCount   = 1,
+		pWaitSemaphores      = &renderer.sync_semaphores_image_available[renderer.frame_index],
+		pWaitDstStageMask    = raw_data(wait_stages),
+		commandBufferCount   = 1,
+		pCommandBuffers      = &renderer.command_buffers[renderer.frame_index],
+		signalSemaphoreCount = 1,
+		pSignalSemaphores    = &renderer.sync_semaphores_render_finished[renderer.frame_index],
+	}
+	if vk.QueueSubmit(
+		   renderer.queue,
+		   1,
+		   &submit_info,
+		   renderer.sync_fences_in_flight[renderer.frame_index],
+	   ) !=
+	   .SUCCESS {
+		panic("failed to submit draw commands to graphics queue")
+	}
+	present_info := vk.PresentInfoKHR {
+		sType              = .PRESENT_INFO_KHR,
+		waitSemaphoreCount = 1,
+		pWaitSemaphores    = &renderer.sync_semaphores_render_finished[renderer.frame_index],
+		swapchainCount     = 1,
+		pSwapchains        = &renderer.swapchain,
+		pImageIndices      = &renderer.swapchain_image_index,
+	}
+	present_res := vk.QueuePresentKHR(renderer.queue, &present_info)
+	if present_res == .ERROR_OUT_OF_DATE_KHR ||
+	   present_res == .SUBOPTIMAL_KHR ||
+	   gc.framebuffer_resized {
+		gc.framebuffer_resized = false
+		recreate_swapchain(renderer)
+	} else if present_res != .SUCCESS {
+		panic("failed to present swapchain image")
+	}
+	renderer.frame_index += 1
+	renderer.frame_index %= MAX_FRAMES_IN_FLIGHT
 }
 
 init_renderer :: proc() -> (renderer: Renderer) {
@@ -194,7 +223,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		)
 		if renderer.window == nil {panic("glfw create window failed")}
 
-    glfw.SetWindowUserPointer(renderer.window, &gc)
+		glfw.SetWindowUserPointer(renderer.window, &gc)
 		framebuffer_resize_callback :: proc "c" (
 			window: glfw.WindowHandle,
 			width: i32,
@@ -646,15 +675,20 @@ init_renderer :: proc() -> (renderer: Renderer) {
 	}
 
 	{ 	// create command buffers
-    allocate_info := vk.CommandBufferAllocateInfo {
-      sType = .COMMAND_BUFFER_ALLOCATE_INFO,
-      commandPool = renderer.command_pool,
-      level = .PRIMARY,
-      commandBufferCount = len(renderer.command_buffers),
-    }
-    if vk.AllocateCommandBuffers(renderer.device, &allocate_info, &renderer.command_buffers[0]) != .SUCCESS {
-      panic("failed to allocate command buffers")
-    }
+		allocate_info := vk.CommandBufferAllocateInfo {
+			sType              = .COMMAND_BUFFER_ALLOCATE_INFO,
+			commandPool        = renderer.command_pool,
+			level              = .PRIMARY,
+			commandBufferCount = len(renderer.command_buffers),
+		}
+		if vk.AllocateCommandBuffers(
+			   renderer.device,
+			   &allocate_info,
+			   &renderer.command_buffers[0],
+		   ) !=
+		   .SUCCESS {
+			panic("failed to allocate command buffers")
+		}
 	}
 
 	{ 	// TODO - create texture image and image view
@@ -663,28 +697,54 @@ init_renderer :: proc() -> (renderer: Renderer) {
 	{ 	// TODO - create texture sampler
 	}
 
-	{ 	// create vertex buffer, allocate and bind memory, and persistently map memory
+	{ 	// create vertex buffers, allocate and bind memory, and persistently map memory
 		buffer_size := cast(vk.DeviceSize)(size_of(vertices[0]) * len(vertices))
-		renderer.vertex_buffer, renderer.vertex_buffer_memory = create_buffer(
-			&renderer,
-			buffer_size,
-			{.VERTEX_BUFFER},
-			{.HOST_VISIBLE, .HOST_COHERENT},
-		)
-    vk.MapMemory(renderer.device, renderer.vertex_buffer_memory, 0, buffer_size, {}, &renderer.vertex_buffer_mapped)
-    intrinsics.mem_copy_non_overlapping(renderer.vertex_buffer_mapped, raw_data(vertices), buffer_size)
+		for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
+			renderer.vertex_buffers[i], renderer.vertex_buffers_memory[i] = create_buffer(
+				&renderer,
+				buffer_size,
+				{.VERTEX_BUFFER},
+				{.HOST_VISIBLE, .HOST_COHERENT},
+			)
+			vk.MapMemory(
+				renderer.device,
+				renderer.vertex_buffers_memory[i],
+				0,
+				buffer_size,
+				{},
+				&renderer.vertex_buffers_mapped[i],
+			)
+			intrinsics.mem_copy_non_overlapping(
+				renderer.vertex_buffers_mapped[i],
+				raw_data(vertices),
+				buffer_size,
+			)
+		}
 	}
 
 	{ 	// create index buffer, alloater and bind memory, and persistently map memory
-    buffer_size := cast(vk.DeviceSize)(size_of(indices[0]) * len(indices))
-    renderer.index_buffer, renderer.index_buffer_memory = create_buffer(
-      &renderer,
-      buffer_size,
-      {.INDEX_BUFFER},
-      {.HOST_VISIBLE, .HOST_COHERENT},
-    )
-    vk.MapMemory(renderer.device, renderer.index_buffer_memory, 0, buffer_size, {}, &renderer.index_buffer_mapped)
-    intrinsics.mem_copy_non_overlapping(renderer.index_buffer_mapped, raw_data(indices), buffer_size)
+		buffer_size := cast(vk.DeviceSize)(size_of(indices[0]) * len(indices))
+		for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
+			renderer.index_buffers[i], renderer.index_buffers_memory[i] = create_buffer(
+				&renderer,
+				buffer_size,
+				{.INDEX_BUFFER},
+				{.HOST_VISIBLE, .HOST_COHERENT},
+			)
+			vk.MapMemory(
+				renderer.device,
+				renderer.index_buffers_memory[i],
+				0,
+				buffer_size,
+				{},
+				&renderer.index_buffers_mapped[i],
+			)
+			intrinsics.mem_copy_non_overlapping(
+				renderer.index_buffers_mapped[i],
+				raw_data(indices),
+				buffer_size,
+			)
+		}
 	}
 
 	{ 	// TODO - create uniform buffers
@@ -697,45 +757,68 @@ init_renderer :: proc() -> (renderer: Renderer) {
 	}
 
 	{ 	// create sync objects
-    semaphore_create_info := vk.SemaphoreCreateInfo {
-      sType = .SEMAPHORE_CREATE_INFO,
-    }
-    fence_create_info := vk.FenceCreateInfo {
-      sType = .FENCE_CREATE_INFO,
-      flags = {.SIGNALED},
-    }
-    for i in 0..< MAX_FRAMES_IN_FLIGHT {
-      if vk.CreateSemaphore(
-        renderer.device,
-        &semaphore_create_info,
-        nil,
-        &renderer.sync_semaphores_image_available[i],
-      ) != .SUCCESS {
-        panic("failed to create image available semaphore")
-      }
-      if vk.CreateSemaphore(
-        renderer.device,
-        &semaphore_create_info,
-        nil,
-        &renderer.sync_semaphores_render_finished[i],
-      ) != .SUCCESS {
-        panic("failed to create render finished semaphore")
-      }
-      if vk.CreateFence(
-        renderer.device,
-        &fence_create_info,
-        nil,
-        &renderer.sync_fences_in_flight[i],
-      ) != .SUCCESS {
-        panic("failed to create in-flight fence")
-      }
-    }
+		semaphore_create_info := vk.SemaphoreCreateInfo {
+			sType = .SEMAPHORE_CREATE_INFO,
+		}
+		fence_create_info := vk.FenceCreateInfo {
+			sType = .FENCE_CREATE_INFO,
+			flags = {.SIGNALED},
+		}
+		for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
+			if vk.CreateSemaphore(
+				   renderer.device,
+				   &semaphore_create_info,
+				   nil,
+				   &renderer.sync_semaphores_image_available[i],
+			   ) !=
+			   .SUCCESS {
+				panic("failed to create image available semaphore")
+			}
+			if vk.CreateSemaphore(
+				   renderer.device,
+				   &semaphore_create_info,
+				   nil,
+				   &renderer.sync_semaphores_render_finished[i],
+			   ) !=
+			   .SUCCESS {
+				panic("failed to create render finished semaphore")
+			}
+			if vk.CreateFence(
+				   renderer.device,
+				   &fence_create_info,
+				   nil,
+				   &renderer.sync_fences_in_flight[i],
+			   ) !=
+			   .SUCCESS {
+				panic("failed to create in-flight fence")
+			}
+		}
 	}
 	return renderer
 }
 
-deinit_renderer :: proc(renderer: Renderer) {
-	fmt.println("deinit_renderer")
+deinit_renderer :: proc(using renderer: ^Renderer) {
+	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
+		vk.DestroySemaphore(device, sync_semaphores_image_available[i], nil)
+		vk.DestroySemaphore(device, sync_semaphores_render_finished[i], nil)
+		vk.DestroyFence(device, sync_fences_in_flight[i], nil)
+	}
+	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
+		vk.DestroyBuffer(device, index_buffers[i], nil)
+		vk.FreeMemory(device, index_buffers_memory[i], nil)
+		vk.DestroyBuffer(device, vertex_buffers[i], nil)
+		vk.FreeMemory(device, vertex_buffers_memory[i], nil)
+	}
+	vk.DestroyCommandPool(device, command_pool, nil)
+	clean_up_swapchain_and_framebuffers(renderer)
+	vk.DestroyPipeline(device, graphics_pipeline, nil)
+	vk.DestroyPipelineLayout(device, pipeline_layout, nil)
+	vk.DestroyRenderPass(device, render_pass, nil)
+	vk.DestroyDevice(device, nil)
+	vk.DestroySurfaceKHR(gc.vk_instance, surface, nil)
+	vk.DestroyInstance(gc.vk_instance, nil)
+	glfw.DestroyWindow(window)
+	glfw.Terminate()
 }
 
 setup_new_swapchain :: proc(renderer: ^Renderer) {
@@ -918,27 +1001,27 @@ find_memory_type :: proc(
 }
 
 recreate_swapchain :: proc(renderer: ^Renderer) {
-  width, height := glfw.GetFramebufferSize(renderer.window)
-  for width == 0 || height == 0 {
-    width, height := glfw.GetFramebufferSize(renderer.window)
-    glfw.WaitEvents()
-  }
+	width, height := glfw.GetFramebufferSize(renderer.window)
+	for width == 0 || height == 0 {
+		width, height := glfw.GetFramebufferSize(renderer.window)
+		glfw.WaitEvents()
+	}
 
-  vk.DeviceWaitIdle(renderer.device)
-  clean_up_swapchain_and_framebuffers(renderer)
-  setup_new_swapchain(renderer)
-  setup_new_framebuffers(renderer)
+	vk.DeviceWaitIdle(renderer.device)
+	clean_up_swapchain_and_framebuffers(renderer)
+	setup_new_swapchain(renderer)
+	setup_new_framebuffers(renderer)
 }
 
 clean_up_swapchain_and_framebuffers :: proc(renderer: ^Renderer) {
-  for framebuffer in renderer.swapchain_framebuffers {
-    vk.DestroyFramebuffer(renderer.device, framebuffer, nil)
-  }
-  delete(renderer.swapchain_framebuffers)
-  for image_view in renderer.swapchain_image_views {
-    vk.DestroyImageView(renderer.device, image_view, nil)
-  }
-  delete(renderer.swapchain_images)
-  delete(renderer.swapchain_image_views)
-  vk.DestroySwapchainKHR(renderer.device, renderer.swapchain, nil)
+	for framebuffer in renderer.swapchain_framebuffers {
+		vk.DestroyFramebuffer(renderer.device, framebuffer, nil)
+	}
+	delete(renderer.swapchain_framebuffers)
+	for image_view in renderer.swapchain_image_views {
+		vk.DestroyImageView(renderer.device, image_view, nil)
+	}
+	delete(renderer.swapchain_images)
+	delete(renderer.swapchain_image_views)
+	vk.DestroySwapchainKHR(renderer.device, renderer.swapchain, nil)
 }

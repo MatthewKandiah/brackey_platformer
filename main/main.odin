@@ -1,8 +1,8 @@
 package main
 
 import "core:fmt"
-import vk "vendor:vulkan"
 import glfw "vendor:glfw"
+import vk "vendor:vulkan"
 
 GlobalContext :: struct {
 	framebuffer_resized: bool,
@@ -21,9 +21,9 @@ main :: proc() {
 	renderer := init_renderer()
 
 	for !glfw.WindowShouldClose(renderer.window) {
-    glfw.PollEvents()
+		glfw.PollEvents()
 		draw_frame(&renderer)
 	}
-  vk.DeviceWaitIdle(renderer.device)
-	deinit_renderer(renderer)
+	vk.DeviceWaitIdle(renderer.device)
+	deinit_renderer(&renderer)
 }
