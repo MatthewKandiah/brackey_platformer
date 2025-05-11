@@ -770,10 +770,49 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		   .SUCCESS {
 			panic("failed to bind texture image memory")
 		}
-		// transition image layout to DST_OPTIMAL
-		// copy staging buffer -> image
-		// transition image layout to SHADER_READ_ONLY_OPTIMAL
-		// create texture image view
+		transition_image_layout(
+			&renderer,
+			renderer.texture_image,
+			.R8G8B8A8_SRGB,
+			.UNDEFINED,
+			.TRANSFER_DST_OPTIMAL,
+		)
+		copy_buffer_to_image(
+			&renderer,
+			staging_buffer,
+			renderer.texture_image,
+			cast(u32)width,
+			cast(u32)height,
+		)
+		transition_image_layout(
+			&renderer,
+			renderer.texture_image,
+			.R8G8B8A8_SRGB,
+			.TRANSFER_DST_OPTIMAL,
+			.SHADER_READ_ONLY_OPTIMAL,
+		)
+		image_view_create_info := vk.ImageViewCreateInfo {
+			sType = .IMAGE_VIEW_CREATE_INFO,
+			image = renderer.texture_image,
+			viewType = .D2,
+			format = .R8G8B8A8_SRGB,
+			subresourceRange = {
+				aspectMask = {.COLOR},
+				baseMipLevel = 0,
+				levelCount = 1,
+				baseArrayLayer = 0,
+				layerCount = 1,
+			},
+		}
+		if vk.CreateImageView(
+			   renderer.device,
+			   &image_view_create_info,
+			   nil,
+			   &renderer.texture_image_view,
+		   ) !=
+		   .SUCCESS {
+			panic("failed to create texture image view")
+		}
 	}
 
 	{ 	// TODO - create texture sampler
@@ -880,6 +919,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
 }
 
 deinit_renderer :: proc(using renderer: ^Renderer) {
+  vk.DestroyImageView(device, texture_image_view, nil)
 	vk.DestroyImage(device, texture_image, nil)
 	vk.FreeMemory(device, texture_image_memory, nil)
 	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
@@ -1108,4 +1148,126 @@ clean_up_swapchain_and_framebuffers :: proc(renderer: ^Renderer) {
 	delete(renderer.swapchain_images)
 	delete(renderer.swapchain_image_views)
 	vk.DestroySwapchainKHR(renderer.device, renderer.swapchain, nil)
+}
+
+begin_single_time_commands :: proc(state: ^Renderer) -> vk.CommandBuffer {
+	command_buffer_allocate_info := vk.CommandBufferAllocateInfo {
+		sType              = .COMMAND_BUFFER_ALLOCATE_INFO,
+		level              = .PRIMARY,
+		commandPool        = state.command_pool,
+		commandBufferCount = 1,
+	}
+	temp_command_buffer: vk.CommandBuffer
+	if res := vk.AllocateCommandBuffers(
+		state.device,
+		&command_buffer_allocate_info,
+		&temp_command_buffer,
+	); res != .SUCCESS {
+		panic("failed to allocate temporary buffer for image transition")
+	}
+	command_buffer_begin_info := vk.CommandBufferBeginInfo {
+		sType = .COMMAND_BUFFER_BEGIN_INFO,
+		flags = {.ONE_TIME_SUBMIT},
+	}
+	if res := vk.BeginCommandBuffer(temp_command_buffer, &command_buffer_begin_info);
+	   res != .SUCCESS {
+		panic("failed to begin temporary command buffer for image transition")
+	}
+	return temp_command_buffer
+}
+
+end_single_time_commands :: proc(renderer: ^Renderer, temp_command_buffer: ^vk.CommandBuffer) {
+	vk.EndCommandBuffer(temp_command_buffer^)
+	submit_info := vk.SubmitInfo {
+		sType              = .SUBMIT_INFO,
+		commandBufferCount = 1,
+		pCommandBuffers    = temp_command_buffer,
+	}
+	vk.QueueSubmit(renderer.queue, 1, &submit_info, 0)
+	vk.QueueWaitIdle(renderer.queue)
+	vk.FreeCommandBuffers(renderer.device, renderer.command_pool, 1, temp_command_buffer)
+}
+
+transition_image_layout :: proc(
+	renderer: ^Renderer,
+	image: vk.Image,
+	format: vk.Format,
+	old_layout: vk.ImageLayout,
+	new_layout: vk.ImageLayout,
+) {
+	temp_command_buffer := begin_single_time_commands(renderer)
+	memory_barrier := vk.ImageMemoryBarrier {
+		sType = .IMAGE_MEMORY_BARRIER,
+		oldLayout = old_layout,
+		newLayout = new_layout,
+		srcQueueFamilyIndex = vk.QUEUE_FAMILY_IGNORED,
+		dstQueueFamilyIndex = vk.QUEUE_FAMILY_IGNORED,
+		image = image,
+		subresourceRange = {
+			aspectMask = {.COLOR},
+			baseMipLevel = 0,
+			levelCount = 1,
+			baseArrayLayer = 0,
+			layerCount = 1,
+		},
+	}
+	source_stage, destination_stage: vk.PipelineStageFlags
+	if old_layout == .UNDEFINED && new_layout == .TRANSFER_DST_OPTIMAL {
+		memory_barrier.srcAccessMask = {}
+		memory_barrier.dstAccessMask = {.TRANSFER_WRITE}
+		source_stage = {.TOP_OF_PIPE}
+		destination_stage = {.TRANSFER}
+	} else if old_layout == .TRANSFER_DST_OPTIMAL && new_layout == .SHADER_READ_ONLY_OPTIMAL {
+		memory_barrier.srcAccessMask = {.TRANSFER_WRITE}
+		memory_barrier.dstAccessMask = {.SHADER_READ}
+		source_stage = {.TRANSFER}
+		destination_stage = {.FRAGMENT_SHADER}
+	} else {
+		panic("unsupported layout transition")
+	}
+	vk.CmdPipelineBarrier(
+		temp_command_buffer,
+		source_stage,
+		destination_stage,
+		{},
+		0,
+		nil,
+		0,
+		nil,
+		1,
+		&memory_barrier,
+	)
+	end_single_time_commands(renderer, &temp_command_buffer)
+}
+
+copy_buffer_to_image :: proc(
+	renderer: ^Renderer,
+	buffer: vk.Buffer,
+	image: vk.Image,
+	width: u32,
+	height: u32,
+) {
+	temp_command_buffer := begin_single_time_commands(renderer)
+	buffer_image_copy := vk.BufferImageCopy {
+		bufferOffset = 0,
+		bufferRowLength = 0,
+		bufferImageHeight = 0,
+		imageSubresource = {
+			aspectMask = {.COLOR},
+			mipLevel = 0,
+			baseArrayLayer = 0,
+			layerCount = 1,
+		},
+		imageOffset = {0, 0, 0},
+		imageExtent = {width, height, 1},
+	}
+	vk.CmdCopyBufferToImage(
+		temp_command_buffer,
+		buffer,
+		image,
+		.TRANSFER_DST_OPTIMAL,
+		1,
+		&buffer_image_copy,
+	)
+	end_single_time_commands(renderer, &temp_command_buffer)
 }
