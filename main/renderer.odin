@@ -64,6 +64,9 @@ Renderer :: struct {
 	sync_fences_in_flight:           [MAX_FRAMES_IN_FLIGHT]vk.Fence,
 	sync_semaphores_image_available: [MAX_FRAMES_IN_FLIGHT]vk.Semaphore,
 	sync_semaphores_render_finished: [MAX_FRAMES_IN_FLIGHT]vk.Semaphore,
+	texture_image:                   vk.Image,
+	texture_image_view:              vk.ImageView,
+	texture_image_memory:            vk.DeviceMemory,
 }
 
 draw_frame :: proc(renderer: ^Renderer) {
@@ -693,7 +696,84 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		}
 	}
 
-	{ 	// TODO - create texture image and image view
+	{ 	// create texture image and image view
+		width, height, channel_count: i32
+		data := stbi.load(TEXTURE_NAME, &width, &height, &channel_count, 0)
+		if data == nil {
+			fmt.eprintln("image file:", TEXTURE_NAME)
+			panic("failed to load image from file")
+		}
+		if channel_count != 4 {
+			panic("Assumed input will be 4 channel")
+		}
+		defer stbi.image_free(data)
+		buffer_size := cast(vk.DeviceSize)(width * height * 4)
+		staging_buffer, staging_buffer_memory := create_buffer(
+			&renderer,
+			buffer_size,
+			{.TRANSFER_SRC},
+			{.HOST_COHERENT, .HOST_VISIBLE},
+		)
+		defer {
+			vk.DestroyBuffer(renderer.device, staging_buffer, nil)
+			vk.FreeMemory(renderer.device, staging_buffer_memory, nil)
+		}
+		staging_buffer_data: rawptr
+		vk.MapMemory(
+			renderer.device,
+			staging_buffer_memory,
+			0,
+			buffer_size,
+			{},
+			&staging_buffer_data,
+		)
+		intrinsics.mem_copy_non_overlapping(staging_buffer_data, data, buffer_size)
+		vk.UnmapMemory(renderer.device, staging_buffer_memory)
+		image_create_info := vk.ImageCreateInfo {
+			sType = .IMAGE_CREATE_INFO,
+			imageType = .D2,
+			usage = {.TRANSFER_DST, .SAMPLED},
+			format = .R8G8B8A8_SRGB,
+			extent = {width = cast(u32)width, height = cast(u32)height, depth = 1},
+			mipLevels = 1,
+			arrayLayers = 1,
+			tiling = .OPTIMAL,
+			initialLayout = .UNDEFINED,
+			sharingMode = .EXCLUSIVE,
+			samples = {._1},
+		}
+		if vk.CreateImage(renderer.device, &image_create_info, nil, &renderer.texture_image) !=
+		   .SUCCESS {
+			panic("failed to create texture image")
+		}
+		mem_requirements: vk.MemoryRequirements
+		vk.GetImageMemoryRequirements(renderer.device, renderer.texture_image, &mem_requirements)
+		alloc_info := vk.MemoryAllocateInfo {
+			sType           = .MEMORY_ALLOCATE_INFO,
+			allocationSize  = mem_requirements.size,
+			memoryTypeIndex = find_memory_type(
+				&renderer,
+				mem_requirements.memoryTypeBits,
+				{.DEVICE_LOCAL},
+			),
+		}
+		if vk.AllocateMemory(renderer.device, &alloc_info, nil, &renderer.texture_image_memory) !=
+		   .SUCCESS {
+			panic("failed to allocate texture image memory")
+		}
+		if vk.BindImageMemory(
+			   renderer.device,
+			   renderer.texture_image,
+			   renderer.texture_image_memory,
+			   0,
+		   ) !=
+		   .SUCCESS {
+			panic("failed to bind texture image memory")
+		}
+		// transition image layout to DST_OPTIMAL
+		// copy staging buffer -> image
+		// transition image layout to SHADER_READ_ONLY_OPTIMAL
+		// create texture image view
 	}
 
 	{ 	// TODO - create texture sampler
@@ -800,6 +880,8 @@ init_renderer :: proc() -> (renderer: Renderer) {
 }
 
 deinit_renderer :: proc(using renderer: ^Renderer) {
+	vk.DestroyImage(device, texture_image, nil)
+	vk.FreeMemory(device, texture_image_memory, nil)
 	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
 		vk.DestroySemaphore(device, sync_semaphores_image_available[i], nil)
 		vk.DestroySemaphore(device, sync_semaphores_render_finished[i], nil)
