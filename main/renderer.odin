@@ -897,13 +897,10 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		}
 	}
 
-	{ 	// TODO - create uniform buffers
-	}
-
 	{ 	// TODO - create descriptor pool
 	}
 
-	{ 	// TODO - allocate and configure descriptor sets
+	{ 	// TODO - allocate and configure descriptor sets (will need at least one for the texture sampler!)
 	}
 
 	{ 	// create sync objects
