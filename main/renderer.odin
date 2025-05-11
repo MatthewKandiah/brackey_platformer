@@ -130,6 +130,13 @@ draw_frame :: proc(renderer: ^Renderer) {
 		.GRAPHICS,
 		renderer.graphics_pipeline,
 	)
+	vertex_buffer_size := cast(vk.DeviceSize)(size_of(vertices[0]) * len(vertices))
+	intrinsics.mem_copy_non_overlapping(
+		renderer.vertex_buffers_mapped[renderer.frame_index],
+		raw_data(vertices),
+		vertex_buffer_size,
+	)
+  fmt.println("copied data to vertex buffer", renderer.frame_index)
 	vertex_buffers := []vk.Buffer{renderer.vertex_buffers[renderer.frame_index]}
 	offsets := []vk.DeviceSize{0}
 	vk.CmdBindVertexBuffers(
@@ -908,11 +915,6 @@ init_renderer :: proc() -> (renderer: Renderer) {
 				buffer_size,
 				{},
 				&renderer.vertex_buffers_mapped[i],
-			)
-			intrinsics.mem_copy_non_overlapping(
-				renderer.vertex_buffers_mapped[i],
-				raw_data(vertices),
-				buffer_size,
 			)
 		}
 	}
