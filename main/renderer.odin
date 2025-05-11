@@ -110,7 +110,7 @@ draw_frame :: proc(renderer: ^Renderer) {
 		panic("failed to begin recording command buffer")
 	}
 	clear_value := vk.ClearValue {
-		color = {float32 = {0, 0, 0, 1}},
+		color = {float32 = {1, 0, 1, 1}},
 	}
 	render_pass_begin_info := vk.RenderPassBeginInfo {
 		sType = .RENDER_PASS_BEGIN_INFO,
