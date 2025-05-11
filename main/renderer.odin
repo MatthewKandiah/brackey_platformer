@@ -67,6 +67,7 @@ Renderer :: struct {
 	texture_image:                   vk.Image,
 	texture_image_view:              vk.ImageView,
 	texture_image_memory:            vk.DeviceMemory,
+	texture_sampler:                 vk.Sampler,
 }
 
 draw_frame :: proc(renderer: ^Renderer) {
@@ -815,8 +816,36 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		}
 	}
 
-	{ 	// TODO - create texture sampler
-	}
+	{ 	// create texture sampler
+		physical_device_properties: vk.PhysicalDeviceProperties
+		vk.GetPhysicalDeviceProperties(renderer.physical_device, &physical_device_properties)
+		sampler_create_info := vk.SamplerCreateInfo {
+			sType                   = .SAMPLER_CREATE_INFO,
+			magFilter               = .LINEAR,
+			minFilter               = .LINEAR,
+			addressModeU            = .CLAMP_TO_EDGE,
+			addressModeV            = .CLAMP_TO_EDGE,
+			addressModeW            = .CLAMP_TO_EDGE,
+			anisotropyEnable        = false,
+			maxAnisotropy           = physical_device_properties.limits.maxSamplerAnisotropy,
+			borderColor             = .INT_OPAQUE_BLACK,
+			unnormalizedCoordinates = true,
+			compareEnable           = false,
+			compareOp               = .ALWAYS,
+			mipmapMode              = .NEAREST,
+			mipLodBias              = 0,
+			minLod                  = 0,
+			maxLod                  = 0,
+		}
+		if res := vk.CreateSampler(
+			renderer.device,
+			&sampler_create_info,
+			nil,
+			&renderer.texture_sampler,
+		); res != .SUCCESS {
+			panic("failed to create texture sampler")
+		}
+  }
 
 	{ 	// create vertex buffers, allocate and bind memory, and persistently map memory
 		buffer_size := cast(vk.DeviceSize)(size_of(vertices[0]) * len(vertices))
@@ -919,7 +948,8 @@ init_renderer :: proc() -> (renderer: Renderer) {
 }
 
 deinit_renderer :: proc(using renderer: ^Renderer) {
-  vk.DestroyImageView(device, texture_image_view, nil)
+	vk.DestroySampler(device, texture_sampler, nil)
+	vk.DestroyImageView(device, texture_image_view, nil)
 	vk.DestroyImage(device, texture_image, nil)
 	vk.FreeMemory(device, texture_image_memory, nil)
 	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
