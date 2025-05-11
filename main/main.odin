@@ -1,6 +1,7 @@
 package main
 
 import "core:fmt"
+import "core:time"
 import glfw "vendor:glfw"
 import vk "vendor:vulkan"
 
@@ -26,8 +27,13 @@ main :: proc() {
 	renderer := init_renderer()
 
 	for !glfw.WindowShouldClose(renderer.window) {
+		start_time := time.now()
 		glfw.PollEvents()
 		draw_frame(&renderer)
+		finish_time := time.now()
+    frame_duration := time.diff(start_time, finish_time)
+    wait_duration := max(16_666_667 * time.Nanosecond - frame_duration, 0)
+    time.accurate_sleep(wait_duration)
 	}
 	vk.DeviceWaitIdle(renderer.device)
 	deinit_renderer(&renderer)
