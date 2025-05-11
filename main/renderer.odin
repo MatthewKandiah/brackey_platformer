@@ -6,14 +6,16 @@ import "core:fmt"
 import "core:math/linalg/glsl"
 import "core:os"
 import "vendor:glfw"
+import stbi "vendor:stb/image"
 import vk "vendor:vulkan"
 
 APP_NAME :: "Brackey Platformer"
-REQUIRED_LAYER_NAMES := []cstring{"VK_LAYER_KHRONOS_validation"} if ODIN_DEBUG else nil
+REQUIRED_LAYER_NAMES := []cstring{"VK_LAYER_KHRONOS_validation"} when ODIN_DEBUG else []cstring{}
 REQUIRED_EXTENSION_NAMES := []cstring{vk.KHR_SWAPCHAIN_EXTENSION_NAME}
 MAX_FRAMES_IN_FLIGHT :: 2
 WINDOW_WIDTH_INITIAL :: 800
 WINDOW_HEIGHT_INITIAL :: 600
+TEXTURE_NAME :: "./brackeys_platformer_assets/sprites/knight.png"
 
 Vertex :: struct {
 	pos: glsl.vec2,
