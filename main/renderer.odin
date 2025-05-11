@@ -640,8 +640,14 @@ init_renderer :: proc() -> (renderer: Renderer) {
 			rasterizationSamples = {._1},
 		}
 		pipeline_color_blend_attachment_state := vk.PipelineColorBlendAttachmentState {
-			colorWriteMask = {.R, .G, .B, .A},
-			blendEnable    = false,
+			colorWriteMask      = {.R, .G, .B, .A},
+			blendEnable         = true,
+			srcColorBlendFactor = .SRC_ALPHA,
+			dstColorBlendFactor = .ONE_MINUS_SRC_ALPHA,
+			srcAlphaBlendFactor = .ONE,
+			dstAlphaBlendFactor = .ZERO,
+			colorBlendOp        = .ADD,
+			alphaBlendOp        = .ADD,
 		}
 		pipeline_color_blend_state_create_info := vk.PipelineColorBlendStateCreateInfo {
 			sType           = .PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
