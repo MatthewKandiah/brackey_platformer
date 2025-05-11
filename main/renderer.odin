@@ -18,7 +18,8 @@ WINDOW_HEIGHT_INITIAL :: 600
 TEXTURE_NAME :: "./brackeys_platformer_assets/sprites/knight.png"
 
 Vertex :: struct {
-	pos: glsl.vec2,
+	pos:     glsl.vec2,
+	tex_pos: glsl.vec2,
 }
 
 vertex_input_binding_description := vk.VertexInputBindingDescription {
@@ -27,11 +28,14 @@ vertex_input_binding_description := vk.VertexInputBindingDescription {
 	inputRate = .VERTEX,
 }
 
-vertex_input_attribute_description := vk.VertexInputAttributeDescription {
-	binding  = 0,
-	location = 0,
-	format   = .R32G32_SFLOAT,
-	offset   = cast(u32)offset_of(Vertex, pos),
+vertex_input_attribute_descriptions := []vk.VertexInputAttributeDescription {
+	{binding = 0, location = 0, format = .R32G32_SFLOAT, offset = cast(u32)offset_of(Vertex, pos)},
+	{
+		binding = 0,
+		location = 1,
+		format = .R32G32_SFLOAT,
+		offset = cast(u32)offset_of(Vertex, tex_pos),
+	},
 }
 
 Renderer :: struct {
@@ -68,6 +72,9 @@ Renderer :: struct {
 	texture_image_view:              vk.ImageView,
 	texture_image_memory:            vk.DeviceMemory,
 	texture_sampler:                 vk.Sampler,
+	descriptor_set_layout:           vk.DescriptorSetLayout,
+	descriptor_pool:                 vk.DescriptorPool,
+	descriptor_sets:                 [MAX_FRAMES_IN_FLIGHT]vk.DescriptorSet,
 }
 
 draw_frame :: proc(renderer: ^Renderer) {
@@ -152,6 +159,16 @@ draw_frame :: proc(renderer: ^Renderer) {
 		extent = renderer.surface_extent,
 	}
 	vk.CmdSetScissor(renderer.command_buffers[renderer.frame_index], 0, 1, &scissor)
+	vk.CmdBindDescriptorSets(
+		renderer.command_buffers[renderer.frame_index],
+		.GRAPHICS,
+		renderer.pipeline_layout,
+		0,
+		1,
+		&renderer.descriptor_sets[renderer.frame_index],
+		0,
+		nil,
+	)
 	vk.CmdDrawIndexed(
 		renderer.command_buffers[renderer.frame_index],
 		cast(u32)len(indices),
@@ -468,8 +485,61 @@ init_renderer :: proc() -> (renderer: Renderer) {
 
 	setup_new_swapchain(&renderer)
 
+	{ 	// create texture sampler
+		physical_device_properties: vk.PhysicalDeviceProperties
+		vk.GetPhysicalDeviceProperties(renderer.physical_device, &physical_device_properties)
+		sampler_create_info := vk.SamplerCreateInfo {
+			sType                   = .SAMPLER_CREATE_INFO,
+			magFilter               = .NEAREST,
+			minFilter               = .NEAREST,
+			addressModeU            = .CLAMP_TO_EDGE,
+			addressModeV            = .CLAMP_TO_EDGE,
+			addressModeW            = .CLAMP_TO_EDGE,
+			anisotropyEnable        = false,
+			maxAnisotropy           = physical_device_properties.limits.maxSamplerAnisotropy,
+			borderColor             = .INT_OPAQUE_BLACK,
+			unnormalizedCoordinates = true,
+			compareEnable           = false,
+			compareOp               = .ALWAYS,
+			mipmapMode              = .NEAREST,
+			mipLodBias              = 0,
+			minLod                  = 0,
+			maxLod                  = 0,
+		}
+		if res := vk.CreateSampler(
+			renderer.device,
+			&sampler_create_info,
+			nil,
+			&renderer.texture_sampler,
+		); res != .SUCCESS {
+			panic("failed to create texture sampler")
+		}
+	}
 
-	{ 	// TODO - create descriptor sets for image sampler(s) and uniform buffer object(s)
+	{ 	// create descriptor set layout for image sampler(s) and uniform buffer object(s)
+		sampler_descriptor := vk.DescriptorSetLayoutBinding {
+			binding         = 0,
+			descriptorType  = .COMBINED_IMAGE_SAMPLER,
+			descriptorCount = 1,
+			stageFlags      = {.FRAGMENT},
+		}
+
+		descriptor_set_bindings := []vk.DescriptorSetLayoutBinding{sampler_descriptor}
+
+		create_info := vk.DescriptorSetLayoutCreateInfo {
+			sType        = .DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+			pBindings    = raw_data(descriptor_set_bindings),
+			bindingCount = cast(u32)len(descriptor_set_bindings),
+		}
+		if vk.CreateDescriptorSetLayout(
+			   renderer.device,
+			   &create_info,
+			   nil,
+			   &renderer.descriptor_set_layout,
+		   ) !=
+		   .SUCCESS {
+			panic("failed to create descriptor set layout")
+		}
 	}
 
 	{ 	// create graphics pipeline
@@ -541,8 +611,8 @@ init_renderer :: proc() -> (renderer: Renderer) {
 			sType                           = .PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 			vertexBindingDescriptionCount   = 1,
 			pVertexBindingDescriptions      = &vertex_input_binding_description,
-			vertexAttributeDescriptionCount = 1,
-			pVertexAttributeDescriptions    = &vertex_input_attribute_description,
+			vertexAttributeDescriptionCount = cast(u32)len(vertex_input_attribute_descriptions),
+			pVertexAttributeDescriptions    = raw_data(vertex_input_attribute_descriptions),
 		}
 		input_assembly_state_create_info := vk.PipelineInputAssemblyStateCreateInfo {
 			sType                  = .PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
@@ -581,8 +651,8 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		}
 		pipeline_layout_create_info := vk.PipelineLayoutCreateInfo {
 			sType          = .PIPELINE_LAYOUT_CREATE_INFO,
-			setLayoutCount = 0,
-			pSetLayouts    = nil,
+			setLayoutCount = 1,
+			pSetLayouts    = &renderer.descriptor_set_layout,
 		}
 		if vk.CreatePipelineLayout(
 			   renderer.device,
@@ -816,37 +886,6 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		}
 	}
 
-	{ 	// create texture sampler
-		physical_device_properties: vk.PhysicalDeviceProperties
-		vk.GetPhysicalDeviceProperties(renderer.physical_device, &physical_device_properties)
-		sampler_create_info := vk.SamplerCreateInfo {
-			sType                   = .SAMPLER_CREATE_INFO,
-			magFilter               = .LINEAR,
-			minFilter               = .LINEAR,
-			addressModeU            = .CLAMP_TO_EDGE,
-			addressModeV            = .CLAMP_TO_EDGE,
-			addressModeW            = .CLAMP_TO_EDGE,
-			anisotropyEnable        = false,
-			maxAnisotropy           = physical_device_properties.limits.maxSamplerAnisotropy,
-			borderColor             = .INT_OPAQUE_BLACK,
-			unnormalizedCoordinates = true,
-			compareEnable           = false,
-			compareOp               = .ALWAYS,
-			mipmapMode              = .NEAREST,
-			mipLodBias              = 0,
-			minLod                  = 0,
-			maxLod                  = 0,
-		}
-		if res := vk.CreateSampler(
-			renderer.device,
-			&sampler_create_info,
-			nil,
-			&renderer.texture_sampler,
-		); res != .SUCCESS {
-			panic("failed to create texture sampler")
-		}
-  }
-
 	{ 	// create vertex buffers, allocate and bind memory, and persistently map memory
 		buffer_size := cast(vk.DeviceSize)(size_of(vertices[0]) * len(vertices))
 		for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
@@ -897,10 +936,71 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		}
 	}
 
-	{ 	// TODO - create descriptor pool
+	{ 	// create descriptor pool
+		descriptor_pool_size_sampler := vk.DescriptorPoolSize {
+			type            = .COMBINED_IMAGE_SAMPLER,
+			descriptorCount = MAX_FRAMES_IN_FLIGHT,
+		}
+		pool_sizes := []vk.DescriptorPoolSize{descriptor_pool_size_sampler}
+		descriptor_pool_create_info := vk.DescriptorPoolCreateInfo {
+			sType         = .DESCRIPTOR_POOL_CREATE_INFO,
+			poolSizeCount = cast(u32)len(pool_sizes),
+			pPoolSizes    = raw_data(pool_sizes),
+			maxSets       = MAX_FRAMES_IN_FLIGHT,
+		}
+		if res := vk.CreateDescriptorPool(
+			renderer.device,
+			&descriptor_pool_create_info,
+			nil,
+			&renderer.descriptor_pool,
+		); res != .SUCCESS {
+			panic("failed to create descriptor pool")
+		}
 	}
 
-	{ 	// TODO - allocate and configure descriptor sets (will need at least one for the texture sampler!)
+	{ 	// allocate descriptor sets and hook them up to relevant resources
+		layouts := [MAX_FRAMES_IN_FLIGHT]vk.DescriptorSetLayout {
+			renderer.descriptor_set_layout,
+			renderer.descriptor_set_layout,
+		}
+		allocate_info := vk.DescriptorSetAllocateInfo {
+			sType              = .DESCRIPTOR_SET_ALLOCATE_INFO,
+			descriptorPool     = renderer.descriptor_pool,
+			descriptorSetCount = MAX_FRAMES_IN_FLIGHT,
+			pSetLayouts        = &layouts[0],
+		}
+		if res := vk.AllocateDescriptorSets(
+			renderer.device,
+			&allocate_info,
+			&renderer.descriptor_sets[0],
+		); res != .SUCCESS {
+			panic("failed to allocate descriptor sets")
+		}
+
+		for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
+			descriptor_image_info := vk.DescriptorImageInfo {
+				imageLayout = .SHADER_READ_ONLY_OPTIMAL,
+				imageView   = renderer.texture_image_view,
+				sampler     = renderer.texture_sampler,
+			}
+			descriptor_write_sampler := vk.WriteDescriptorSet {
+				sType           = .WRITE_DESCRIPTOR_SET,
+				dstSet          = renderer.descriptor_sets[i],
+				dstBinding      = 0,
+				dstArrayElement = 0,
+				descriptorType  = .COMBINED_IMAGE_SAMPLER,
+				descriptorCount = 1,
+				pImageInfo      = &descriptor_image_info,
+			}
+			descriptor_writes := []vk.WriteDescriptorSet{descriptor_write_sampler}
+			vk.UpdateDescriptorSets(
+				renderer.device,
+				cast(u32)len(descriptor_writes),
+				raw_data(descriptor_writes),
+				0,
+				nil,
+			)
+		}
 	}
 
 	{ 	// create sync objects
@@ -945,6 +1045,8 @@ init_renderer :: proc() -> (renderer: Renderer) {
 }
 
 deinit_renderer :: proc(using renderer: ^Renderer) {
+	vk.DestroyDescriptorPool(device, descriptor_pool, nil)
+	vk.DestroyDescriptorSetLayout(device, descriptor_set_layout, nil)
 	vk.DestroySampler(device, texture_sampler, nil)
 	vk.DestroyImageView(device, texture_image_view, nil)
 	vk.DestroyImage(device, texture_image, nil)
