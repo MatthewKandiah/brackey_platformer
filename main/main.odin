@@ -12,6 +12,7 @@ GlobalContext :: struct {
 }
 
 gc: GlobalContext
+NANOSECONDS_PER_FRAME :: 16_666_667
 FRAMES_PER_ANIMATION_CYCLE :: 6
 current_idle_uv := 0
 current_coin_uv := 0
@@ -86,7 +87,7 @@ main :: proc() {
 		draw_frame(&renderer, global_vertices, global_indices)
 		finish_time := time.now()
 		frame_duration := time.diff(start_time, finish_time)
-		wait_duration := max(16_666_667 * time.Nanosecond - frame_duration, 0)
+		wait_duration := max(NANOSECONDS_PER_FRAME * time.Nanosecond - frame_duration, 0)
 		time.accurate_sleep(wait_duration)
 		frame_count += 1
 		if (frame_count >= FRAMES_PER_ANIMATION_CYCLE) {
