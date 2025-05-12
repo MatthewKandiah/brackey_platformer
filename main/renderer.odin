@@ -16,6 +16,7 @@ MAX_FRAMES_IN_FLIGHT :: 2
 WINDOW_WIDTH_INITIAL :: 800
 WINDOW_HEIGHT_INITIAL :: 600
 TEXTURE_NAME :: "./brackeys_platformer_assets/sprites/knight.png"
+TEXTURE_NAME2 :: "./brackeys_platformer_assets/sprites/coin.png"
 VERTEX_BUFFER_SIZE :: 100_000
 INDEX_BUFFER_SIZE :: 100_000
 
@@ -73,6 +74,9 @@ Renderer :: struct {
 	texture_image:                   vk.Image,
 	texture_image_view:              vk.ImageView,
 	texture_image_memory:            vk.DeviceMemory,
+	texture_image2:                  vk.Image,
+	texture_image_view2:             vk.ImageView,
+	texture_image_memory2:           vk.DeviceMemory,
 	texture_sampler:                 vk.Sampler,
 	descriptor_set_layout:           vk.DescriptorSetLayout,
 	descriptor_pool:                 vk.DescriptorPool,
@@ -791,124 +795,10 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		}
 	}
 
-	{ 	// create texture image and image view
-		width, height, channel_count: i32
-		data := stbi.load(TEXTURE_NAME, &width, &height, &channel_count, 0)
-		if data == nil {
-			fmt.eprintln("image file:", TEXTURE_NAME)
-			panic("failed to load image from file")
-		}
-		if channel_count != 4 {
-			panic("Assumed input will be 4 channel")
-		}
-		defer stbi.image_free(data)
-		buffer_size := cast(vk.DeviceSize)(width * height * 4)
-		staging_buffer, staging_buffer_memory := create_buffer(
-			&renderer,
-			buffer_size,
-			{.TRANSFER_SRC},
-			{.HOST_COHERENT, .HOST_VISIBLE},
-		)
-		defer {
-			vk.DestroyBuffer(renderer.device, staging_buffer, nil)
-			vk.FreeMemory(renderer.device, staging_buffer_memory, nil)
-		}
-		staging_buffer_data: rawptr
-		vk.MapMemory(
-			renderer.device,
-			staging_buffer_memory,
-			0,
-			buffer_size,
-			{},
-			&staging_buffer_data,
-		)
-		intrinsics.mem_copy_non_overlapping(staging_buffer_data, data, buffer_size)
-		vk.UnmapMemory(renderer.device, staging_buffer_memory)
-		image_create_info := vk.ImageCreateInfo {
-			sType = .IMAGE_CREATE_INFO,
-			imageType = .D2,
-			usage = {.TRANSFER_DST, .SAMPLED},
-			format = .R8G8B8A8_SRGB,
-			extent = {width = cast(u32)width, height = cast(u32)height, depth = 1},
-			mipLevels = 1,
-			arrayLayers = 1,
-			tiling = .OPTIMAL,
-			initialLayout = .UNDEFINED,
-			sharingMode = .EXCLUSIVE,
-			samples = {._1},
-		}
-		if vk.CreateImage(renderer.device, &image_create_info, nil, &renderer.texture_image) !=
-		   .SUCCESS {
-			panic("failed to create texture image")
-		}
-		mem_requirements: vk.MemoryRequirements
-		vk.GetImageMemoryRequirements(renderer.device, renderer.texture_image, &mem_requirements)
-		alloc_info := vk.MemoryAllocateInfo {
-			sType           = .MEMORY_ALLOCATE_INFO,
-			allocationSize  = mem_requirements.size,
-			memoryTypeIndex = find_memory_type(
-				&renderer,
-				mem_requirements.memoryTypeBits,
-				{.DEVICE_LOCAL},
-			),
-		}
-		if vk.AllocateMemory(renderer.device, &alloc_info, nil, &renderer.texture_image_memory) !=
-		   .SUCCESS {
-			panic("failed to allocate texture image memory")
-		}
-		if vk.BindImageMemory(
-			   renderer.device,
-			   renderer.texture_image,
-			   renderer.texture_image_memory,
-			   0,
-		   ) !=
-		   .SUCCESS {
-			panic("failed to bind texture image memory")
-		}
-		transition_image_layout(
-			&renderer,
-			renderer.texture_image,
-			.R8G8B8A8_SRGB,
-			.UNDEFINED,
-			.TRANSFER_DST_OPTIMAL,
-		)
-		copy_buffer_to_image(
-			&renderer,
-			staging_buffer,
-			renderer.texture_image,
-			cast(u32)width,
-			cast(u32)height,
-		)
-		transition_image_layout(
-			&renderer,
-			renderer.texture_image,
-			.R8G8B8A8_SRGB,
-			.TRANSFER_DST_OPTIMAL,
-			.SHADER_READ_ONLY_OPTIMAL,
-		)
-		image_view_create_info := vk.ImageViewCreateInfo {
-			sType = .IMAGE_VIEW_CREATE_INFO,
-			image = renderer.texture_image,
-			viewType = .D2,
-			format = .R8G8B8A8_SRGB,
-			subresourceRange = {
-				aspectMask = {.COLOR},
-				baseMipLevel = 0,
-				levelCount = 1,
-				baseArrayLayer = 0,
-				layerCount = 1,
-			},
-		}
-		if vk.CreateImageView(
-			   renderer.device,
-			   &image_view_create_info,
-			   nil,
-			   &renderer.texture_image_view,
-		   ) !=
-		   .SUCCESS {
-			panic("failed to create texture image view")
-		}
-	}
+	renderer.texture_image, renderer.texture_image_memory, renderer.texture_image_view =
+		create_texture_from_file(&renderer, TEXTURE_NAME)
+	renderer.texture_image2, renderer.texture_image_memory2, renderer.texture_image_view2 =
+		create_texture_from_file(&renderer, TEXTURE_NAME2)
 
 	{ 	// create vertex buffers, allocate and bind memory, and persistently map memory
 		for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
@@ -1063,6 +953,9 @@ deinit_renderer :: proc(using renderer: ^Renderer) {
 	vk.DestroyImageView(device, texture_image_view, nil)
 	vk.DestroyImage(device, texture_image, nil)
 	vk.FreeMemory(device, texture_image_memory, nil)
+	vk.DestroyImageView(device, texture_image_view2, nil)
+	vk.DestroyImage(device, texture_image2, nil)
+	vk.FreeMemory(device, texture_image_memory2, nil)
 	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
 		vk.DestroySemaphore(device, sync_semaphores_image_available[i], nil)
 		vk.DestroySemaphore(device, sync_semaphores_render_finished[i], nil)
@@ -1411,4 +1304,105 @@ copy_buffer_to_image :: proc(
 		&buffer_image_copy,
 	)
 	end_single_time_commands(renderer, &temp_command_buffer)
+}
+
+create_texture_from_file :: proc(
+	renderer: ^Renderer,
+	filename: cstring,
+) -> (
+	texture_image: vk.Image,
+	texture_image_memory: vk.DeviceMemory,
+	texture_image_view: vk.ImageView,
+) {
+	width, height, channel_count: i32
+	data := stbi.load(filename, &width, &height, &channel_count, 0)
+	if data == nil {
+		fmt.eprintln("image file:", filename)
+		panic("failed to load image from file")
+	}
+	if channel_count != 4 {
+		panic("Assumed input will be 4 channel")
+	}
+	defer stbi.image_free(data)
+	buffer_size := cast(vk.DeviceSize)(width * height * 4)
+	staging_buffer, staging_buffer_memory := create_buffer(
+		renderer,
+		buffer_size,
+		{.TRANSFER_SRC},
+		{.HOST_COHERENT, .HOST_VISIBLE},
+	)
+	defer {
+		vk.DestroyBuffer(renderer.device, staging_buffer, nil)
+		vk.FreeMemory(renderer.device, staging_buffer_memory, nil)
+	}
+	staging_buffer_data: rawptr
+	vk.MapMemory(renderer.device, staging_buffer_memory, 0, buffer_size, {}, &staging_buffer_data)
+	intrinsics.mem_copy_non_overlapping(staging_buffer_data, data, buffer_size)
+	vk.UnmapMemory(renderer.device, staging_buffer_memory)
+	image_create_info := vk.ImageCreateInfo {
+		sType = .IMAGE_CREATE_INFO,
+		imageType = .D2,
+		usage = {.TRANSFER_DST, .SAMPLED},
+		format = .R8G8B8A8_SRGB,
+		extent = {width = cast(u32)width, height = cast(u32)height, depth = 1},
+		mipLevels = 1,
+		arrayLayers = 1,
+		tiling = .OPTIMAL,
+		initialLayout = .UNDEFINED,
+		sharingMode = .EXCLUSIVE,
+		samples = {._1},
+	}
+	if vk.CreateImage(renderer.device, &image_create_info, nil, &texture_image) != .SUCCESS {
+		panic("failed to create texture image")
+	}
+	mem_requirements: vk.MemoryRequirements
+	vk.GetImageMemoryRequirements(renderer.device, texture_image, &mem_requirements)
+	alloc_info := vk.MemoryAllocateInfo {
+		sType           = .MEMORY_ALLOCATE_INFO,
+		allocationSize  = mem_requirements.size,
+		memoryTypeIndex = find_memory_type(
+			renderer,
+			mem_requirements.memoryTypeBits,
+			{.DEVICE_LOCAL},
+		),
+	}
+	if vk.AllocateMemory(renderer.device, &alloc_info, nil, &texture_image_memory) != .SUCCESS {
+		panic("failed to allocate texture image memory")
+	}
+	if vk.BindImageMemory(renderer.device, texture_image, texture_image_memory, 0) != .SUCCESS {
+		panic("failed to bind texture image memory")
+	}
+	transition_image_layout(
+		renderer,
+		texture_image,
+		.R8G8B8A8_SRGB,
+		.UNDEFINED,
+		.TRANSFER_DST_OPTIMAL,
+	)
+	copy_buffer_to_image(renderer, staging_buffer, texture_image, cast(u32)width, cast(u32)height)
+	transition_image_layout(
+		renderer,
+		texture_image,
+		.R8G8B8A8_SRGB,
+		.TRANSFER_DST_OPTIMAL,
+		.SHADER_READ_ONLY_OPTIMAL,
+	)
+	image_view_create_info := vk.ImageViewCreateInfo {
+		sType = .IMAGE_VIEW_CREATE_INFO,
+		image = texture_image,
+		viewType = .D2,
+		format = .R8G8B8A8_SRGB,
+		subresourceRange = {
+			aspectMask = {.COLOR},
+			baseMipLevel = 0,
+			levelCount = 1,
+			baseArrayLayer = 0,
+			layerCount = 1,
+		},
+	}
+	if vk.CreateImageView(renderer.device, &image_view_create_info, nil, &texture_image_view) !=
+	   .SUCCESS {
+		panic("failed to create texture image view")
+	}
+	return
 }
