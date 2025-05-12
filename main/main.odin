@@ -14,7 +14,7 @@ GlobalContext :: struct {
 gc: GlobalContext
 FRAMES_PER_ANIMATION_CYCLE :: 6
 current_idle_uv := 0
-vertices := []Vertex {
+global_vertices := []Vertex {
 	{{-0.5, -0.5}, idle_uvs[current_idle_uv][0]},
 	{{0.5, -0.5}, idle_uvs[current_idle_uv][1]},
 	{{0.5, 0.5}, idle_uvs[current_idle_uv][2]},
@@ -27,7 +27,7 @@ idle_uv_3: []glsl.vec2 : {{64, 0}, {95, 0}, {95, 31}, {64, 31}}
 idle_uv_4: []glsl.vec2 : {{96, 0}, {127, 0}, {127, 31}, {96, 31}}
 idle_uvs := [][]glsl.vec2{idle_uv_1, idle_uv_2, idle_uv_3, idle_uv_4}
 
-indices :: []u32{0, 1, 2, 2, 3, 0}
+global_indices :: []u32{0, 1, 2, 2, 3, 0}
 
 main :: proc() {
 	context.user_ptr = &gc
@@ -39,14 +39,14 @@ main :: proc() {
 		start_time := time.now()
 		glfw.PollEvents()
 
-		vertices = []Vertex {
+		global_vertices = []Vertex {
 			{{-0.5, -0.5}, idle_uvs[current_idle_uv][0]},
 			{{0.5, -0.5}, idle_uvs[current_idle_uv][1]},
 			{{0.5, 0.5}, idle_uvs[current_idle_uv][2]},
 			{{-0.5, 0.5}, idle_uvs[current_idle_uv][3]},
 		}
 
-		draw_frame(&renderer)
+		draw_frame(&renderer, global_vertices, global_indices)
 		finish_time := time.now()
 		frame_duration := time.diff(start_time, finish_time)
 		wait_duration := max(16_666_667 * time.Nanosecond - frame_duration, 0)
@@ -55,8 +55,6 @@ main :: proc() {
 		if (frame_count >= FRAMES_PER_ANIMATION_CYCLE) {
 			frame_count = 0
 			current_idle_uv = (current_idle_uv + 1) % 4
-			fmt.println(current_idle_uv)
-			fmt.println("vertices", vertices)
 		}
 	}
 	vk.DeviceWaitIdle(renderer.device)

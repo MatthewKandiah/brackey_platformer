@@ -16,6 +16,8 @@ MAX_FRAMES_IN_FLIGHT :: 2
 WINDOW_WIDTH_INITIAL :: 800
 WINDOW_HEIGHT_INITIAL :: 600
 TEXTURE_NAME :: "./brackeys_platformer_assets/sprites/knight.png"
+VERTEX_BUFFER_SIZE :: 100_000
+INDEX_BUFFER_SIZE :: 100_000
 
 Vertex :: struct {
 	pos:     glsl.vec2,
@@ -77,7 +79,11 @@ Renderer :: struct {
 	descriptor_sets:                 [MAX_FRAMES_IN_FLIGHT]vk.DescriptorSet,
 }
 
-draw_frame :: proc(renderer: ^Renderer) {
+draw_frame :: proc(renderer: ^Renderer, vertices: []Vertex, indices: []u32) {
+	if len(vertices) >
+	   VERTEX_BUFFER_SIZE {panic("ASSERT: vertex data for draw call will not fit in vertex buffer")}
+	if len(indices) >
+	   INDEX_BUFFER_SIZE {panic("ASSERT: index data for draw call will not fit in index buffer")}
 	vk.WaitForFences(
 		renderer.device,
 		1,
@@ -136,7 +142,12 @@ draw_frame :: proc(renderer: ^Renderer) {
 		raw_data(vertices),
 		vertex_buffer_size,
 	)
-  fmt.println("copied data to vertex buffer", renderer.frame_index)
+	index_buffer_size := cast(vk.DeviceSize)(size_of(vertices[0]) * len(indices))
+	intrinsics.mem_copy_non_overlapping(
+		renderer.index_buffers_mapped[renderer.frame_index],
+		raw_data(indices),
+		index_buffer_size,
+	)
 	vertex_buffers := []vk.Buffer{renderer.vertex_buffers[renderer.frame_index]}
 	offsets := []vk.DeviceSize{0}
 	vk.CmdBindVertexBuffers(
@@ -900,11 +911,10 @@ init_renderer :: proc() -> (renderer: Renderer) {
 	}
 
 	{ 	// create vertex buffers, allocate and bind memory, and persistently map memory
-		buffer_size := cast(vk.DeviceSize)(size_of(vertices[0]) * len(vertices))
 		for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
 			renderer.vertex_buffers[i], renderer.vertex_buffers_memory[i] = create_buffer(
 				&renderer,
-				buffer_size,
+				VERTEX_BUFFER_SIZE,
 				{.VERTEX_BUFFER},
 				{.HOST_VISIBLE, .HOST_COHERENT},
 			)
@@ -912,7 +922,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
 				renderer.device,
 				renderer.vertex_buffers_memory[i],
 				0,
-				buffer_size,
+				VERTEX_BUFFER_SIZE,
 				{},
 				&renderer.vertex_buffers_mapped[i],
 			)
@@ -920,11 +930,10 @@ init_renderer :: proc() -> (renderer: Renderer) {
 	}
 
 	{ 	// create index buffer, alloater and bind memory, and persistently map memory
-		buffer_size := cast(vk.DeviceSize)(size_of(indices[0]) * len(indices))
 		for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
 			renderer.index_buffers[i], renderer.index_buffers_memory[i] = create_buffer(
 				&renderer,
-				buffer_size,
+				INDEX_BUFFER_SIZE,
 				{.INDEX_BUFFER},
 				{.HOST_VISIBLE, .HOST_COHERENT},
 			)
@@ -932,14 +941,9 @@ init_renderer :: proc() -> (renderer: Renderer) {
 				renderer.device,
 				renderer.index_buffers_memory[i],
 				0,
-				buffer_size,
+				INDEX_BUFFER_SIZE,
 				{},
 				&renderer.index_buffers_mapped[i],
-			)
-			intrinsics.mem_copy_non_overlapping(
-				renderer.index_buffers_mapped[i],
-				raw_data(indices),
-				buffer_size,
 			)
 		}
 	}
