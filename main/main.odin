@@ -16,17 +16,6 @@ NANOSECONDS_PER_FRAME :: 16_666_667
 FRAMES_PER_ANIMATION_CYCLE :: 6
 current_idle_uv := 0
 current_coin_uv := 0
-// initial values don't matter, they are overwritten each frame
-global_vertices := []Vertex {
-	{{-0.5, 0}, idle_uvs[current_idle_uv][0], 0},
-	{{0, 0}, idle_uvs[current_idle_uv][1], 0},
-	{{0, 0.5}, idle_uvs[current_idle_uv][2], 0},
-	{{-0.5, 0.5}, idle_uvs[current_idle_uv][3], 0},
-	{{-0.5, -0.5}, idle_uvs[current_idle_uv][0], 0},
-	{{0.5, -0.5}, idle_uvs[current_idle_uv][1], 0},
-	{{0.5, 0.5}, idle_uvs[current_idle_uv][2], 0},
-	{{-0.5, 0.5}, idle_uvs[current_idle_uv][3], 0},
-}
 
 idle_uv_1: []glsl.vec2 : {{0, 0}, {31, 0}, {31, 31}, {0, 31}}
 idle_uv_2: []glsl.vec2 : {{32, 0}, {63, 0}, {63, 31}, {32, 31}}
@@ -61,7 +50,6 @@ coin_uvs := [][]glsl.vec2 {
 	coin_uv_12,
 }
 
-global_indices :: []u32{0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4}
 
 main :: proc() {
 	context.user_ptr = &gc
@@ -73,7 +61,7 @@ main :: proc() {
 		start_time := time.now()
 		glfw.PollEvents()
 
-		global_vertices = []Vertex {
+		vertices := []Vertex {
 			{{-0.5, -0.25}, idle_uvs[current_idle_uv][0], 0},
 			{{0, -0.25}, idle_uvs[current_idle_uv][1], 0},
 			{{0, 0.25}, idle_uvs[current_idle_uv][2], 0},
@@ -83,8 +71,9 @@ main :: proc() {
 			{{0.25, 0.25}, coin_uvs[current_coin_uv][2], 1},
 			{{0, 0.25}, coin_uvs[current_coin_uv][3], 1},
 		}
+		indices := []u32{0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4}
 
-		draw_frame(&renderer, global_vertices, global_indices)
+		draw_frame(&renderer, vertices, indices)
 		finish_time := time.now()
 		frame_duration := time.diff(start_time, finish_time)
 		wait_duration := max(NANOSECONDS_PER_FRAME * time.Nanosecond - frame_duration, 0)

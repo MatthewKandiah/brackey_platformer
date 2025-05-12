@@ -19,7 +19,6 @@ WINDOW_HEIGHT_INITIAL :: 600
 TEXTURE_NAMES := []cstring {
 	"./brackeys_platformer_assets/sprites/knight.png",
 	"./brackeys_platformer_assets/sprites/coin.png",
-	"./brackeys_platformer_assets/sprites/slime_green.png",
 }
 TEXTURE_COUNT :: 3
 VERTEX_BUFFER_SIZE :: 100_000
