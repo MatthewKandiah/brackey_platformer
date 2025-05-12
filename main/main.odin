@@ -45,10 +45,10 @@ main :: proc() {
 		glfw.PollEvents()
 
 		global_vertices = []Vertex {
-			{{-0.5, 0}, idle_uvs[current_idle_uv][0]},
-			{{0, 0}, idle_uvs[current_idle_uv][1]},
-			{{0, 0.5}, idle_uvs[current_idle_uv][2]},
-			{{-0.5, 0.5}, idle_uvs[current_idle_uv][3]},
+			{{-0.5, -0.25}, idle_uvs[current_idle_uv][0]},
+			{{0, -0.25}, idle_uvs[current_idle_uv][1]},
+			{{0, 0.25}, idle_uvs[current_idle_uv][2]},
+			{{-0.5, 0.25}, idle_uvs[current_idle_uv][3]},
 			{{0, 0}, idle_uvs[current_idle_uv][0]},
 			{{0.5, 0}, idle_uvs[current_idle_uv][1]},
 			{{0.5, 0.5}, idle_uvs[current_idle_uv][2]},
