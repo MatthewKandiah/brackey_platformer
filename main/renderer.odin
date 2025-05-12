@@ -15,9 +15,12 @@ REQUIRED_EXTENSION_NAMES := []cstring{vk.KHR_SWAPCHAIN_EXTENSION_NAME}
 MAX_FRAMES_IN_FLIGHT :: 2
 WINDOW_WIDTH_INITIAL :: 800
 WINDOW_HEIGHT_INITIAL :: 600
+@(rodata)
+TEXTURE_NAMES := []cstring {
+	"./brackeys_platformer_assets/sprites/knight.png",
+	"./brackeys_platformer_assets/sprites/coin.png",
+}
 TEXTURE_COUNT :: 2
-TEXTURE_NAME :: "./brackeys_platformer_assets/sprites/knight.png"
-TEXTURE_NAME2 :: "./brackeys_platformer_assets/sprites/coin.png"
 VERTEX_BUFFER_SIZE :: 100_000
 INDEX_BUFFER_SIZE :: 100_000
 
@@ -245,6 +248,7 @@ draw_frame :: proc(renderer: ^Renderer, vertices: []Vertex, indices: []u32) {
 }
 
 init_renderer :: proc() -> (renderer: Renderer) {
+	assert(len(TEXTURE_NAMES) == TEXTURE_COUNT)
 	{ 	// set up window  
 		if !glfw.Init() {
 			panic("glfwInit failed")
@@ -795,10 +799,10 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		}
 	}
 
-	renderer.texture_images[0], renderer.texture_image_memories[0], renderer.texture_image_views[0] =
-		create_texture_from_file(&renderer, TEXTURE_NAME)
-	renderer.texture_images[1], renderer.texture_image_memories[1], renderer.texture_image_views[1] =
-		create_texture_from_file(&renderer, TEXTURE_NAME2)
+	for i in 0 ..< len(TEXTURE_NAMES) {
+		renderer.texture_images[i], renderer.texture_image_memories[i], renderer.texture_image_views[i] =
+			create_texture_from_file(&renderer, TEXTURE_NAMES[i])
+	}
 
 	{ 	// create vertex buffers, allocate and bind memory, and persistently map memory
 		for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
