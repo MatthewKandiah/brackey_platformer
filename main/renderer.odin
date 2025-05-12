@@ -799,9 +799,9 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		}
 	}
 
-	for i in 0 ..< len(TEXTURE_NAMES) {
+	for name, i in TEXTURE_NAMES {
 		renderer.texture_images[i], renderer.texture_image_memories[i], renderer.texture_image_views[i] =
-			create_texture_from_file(&renderer, TEXTURE_NAMES[i])
+			create_texture_from_file(&renderer, name)
 	}
 
 	{ 	// create vertex buffers, allocate and bind memory, and persistently map memory
@@ -884,19 +884,13 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		}
 
 		for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
-			descriptor_image_info := vk.DescriptorImageInfo {
-				imageLayout = .SHADER_READ_ONLY_OPTIMAL,
-				imageView   = renderer.texture_image_views[0],
-				sampler     = renderer.texture_sampler,
-			}
-			descriptor_image_info2 := vk.DescriptorImageInfo {
-				imageLayout = .SHADER_READ_ONLY_OPTIMAL,
-				imageView   = renderer.texture_image_views[1],
-				sampler     = renderer.texture_sampler,
-			}
-			descriptor_image_infos := []vk.DescriptorImageInfo {
-				descriptor_image_info,
-				descriptor_image_info2,
+			descriptor_image_infos: [TEXTURE_COUNT]vk.DescriptorImageInfo
+			for i in 0 ..< TEXTURE_COUNT {
+				descriptor_image_infos[i] = vk.DescriptorImageInfo {
+					imageLayout = .SHADER_READ_ONLY_OPTIMAL,
+					imageView   = renderer.texture_image_views[i],
+					sampler     = renderer.texture_sampler,
+				}
 			}
 			descriptor_write_sampler := vk.WriteDescriptorSet {
 				sType           = .WRITE_DESCRIPTOR_SET,
@@ -904,8 +898,8 @@ init_renderer :: proc() -> (renderer: Renderer) {
 				dstBinding      = 0,
 				dstArrayElement = 0,
 				descriptorType  = .COMBINED_IMAGE_SAMPLER,
-				descriptorCount = 2,
-				pImageInfo      = raw_data(descriptor_image_infos),
+				descriptorCount = TEXTURE_COUNT,
+				pImageInfo      = &descriptor_image_infos[0],
 			}
 			descriptor_writes := []vk.WriteDescriptorSet{descriptor_write_sampler}
 			vk.UpdateDescriptorSets(
