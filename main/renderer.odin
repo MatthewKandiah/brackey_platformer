@@ -19,8 +19,9 @@ WINDOW_HEIGHT_INITIAL :: 600
 TEXTURE_NAMES := []cstring {
 	"./brackeys_platformer_assets/sprites/knight.png",
 	"./brackeys_platformer_assets/sprites/coin.png",
+	"./brackeys_platformer_assets/sprites/slime_green.png",
 }
-TEXTURE_COUNT :: 2
+TEXTURE_COUNT :: 3
 VERTEX_BUFFER_SIZE :: 100_000
 INDEX_BUFFER_SIZE :: 100_000
 
@@ -546,7 +547,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		sampler_descriptor := vk.DescriptorSetLayoutBinding {
 			binding         = 0,
 			descriptorType  = .COMBINED_IMAGE_SAMPLER,
-			descriptorCount = 2,
+			descriptorCount = TEXTURE_COUNT,
 			stageFlags      = {.FRAGMENT},
 		}
 
