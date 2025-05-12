@@ -74,12 +74,9 @@ Renderer :: struct {
 	sync_fences_in_flight:           [MAX_FRAMES_IN_FLIGHT]vk.Fence,
 	sync_semaphores_image_available: [MAX_FRAMES_IN_FLIGHT]vk.Semaphore,
 	sync_semaphores_render_finished: [MAX_FRAMES_IN_FLIGHT]vk.Semaphore,
-	texture_image:                   vk.Image,
-	texture_image_view:              vk.ImageView,
-	texture_image_memory:            vk.DeviceMemory,
-	texture_image2:                  vk.Image,
-	texture_image_view2:             vk.ImageView,
-	texture_image_memory2:           vk.DeviceMemory,
+	texture_images:                  [TEXTURE_COUNT]vk.Image,
+	texture_image_views:             [TEXTURE_COUNT]vk.ImageView,
+	texture_image_memories:          [TEXTURE_COUNT]vk.DeviceMemory,
 	texture_sampler:                 vk.Sampler,
 	descriptor_set_layout:           vk.DescriptorSetLayout,
 	descriptor_pool:                 vk.DescriptorPool,
@@ -798,9 +795,9 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		}
 	}
 
-	renderer.texture_image, renderer.texture_image_memory, renderer.texture_image_view =
+	renderer.texture_images[0], renderer.texture_image_memories[0], renderer.texture_image_views[0] =
 		create_texture_from_file(&renderer, TEXTURE_NAME)
-	renderer.texture_image2, renderer.texture_image_memory2, renderer.texture_image_view2 =
+	renderer.texture_images[1], renderer.texture_image_memories[1], renderer.texture_image_views[1] =
 		create_texture_from_file(&renderer, TEXTURE_NAME2)
 
 	{ 	// create vertex buffers, allocate and bind memory, and persistently map memory
@@ -885,18 +882,18 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
 			descriptor_image_info := vk.DescriptorImageInfo {
 				imageLayout = .SHADER_READ_ONLY_OPTIMAL,
-				imageView   = renderer.texture_image_view,
+				imageView   = renderer.texture_image_views[0],
 				sampler     = renderer.texture_sampler,
 			}
 			descriptor_image_info2 := vk.DescriptorImageInfo {
 				imageLayout = .SHADER_READ_ONLY_OPTIMAL,
-				imageView   = renderer.texture_image_view2,
+				imageView   = renderer.texture_image_views[1],
 				sampler     = renderer.texture_sampler,
 			}
-      descriptor_image_infos := []vk.DescriptorImageInfo{
-        descriptor_image_info,
-        descriptor_image_info2,
-      }
+			descriptor_image_infos := []vk.DescriptorImageInfo {
+				descriptor_image_info,
+				descriptor_image_info2,
+			}
 			descriptor_write_sampler := vk.WriteDescriptorSet {
 				sType           = .WRITE_DESCRIPTOR_SET,
 				dstSet          = renderer.descriptor_sets[i],
@@ -962,12 +959,11 @@ deinit_renderer :: proc(using renderer: ^Renderer) {
 	vk.DestroyDescriptorPool(device, descriptor_pool, nil)
 	vk.DestroyDescriptorSetLayout(device, descriptor_set_layout, nil)
 	vk.DestroySampler(device, texture_sampler, nil)
-	vk.DestroyImageView(device, texture_image_view, nil)
-	vk.DestroyImage(device, texture_image, nil)
-	vk.FreeMemory(device, texture_image_memory, nil)
-	vk.DestroyImageView(device, texture_image_view2, nil)
-	vk.DestroyImage(device, texture_image2, nil)
-	vk.FreeMemory(device, texture_image_memory2, nil)
+	for i in 0 ..< TEXTURE_COUNT {
+		vk.DestroyImageView(device, texture_image_views[i], nil)
+		vk.DestroyImage(device, texture_images[i], nil)
+		vk.FreeMemory(device, texture_image_memories[i], nil)
+	}
 	for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
 		vk.DestroySemaphore(device, sync_semaphores_image_available[i], nil)
 		vk.DestroySemaphore(device, sync_semaphores_render_finished[i], nil)
