@@ -78,9 +78,9 @@ main :: proc() {
 			{{0, 0.25}, idle_uvs[current_idle_uv][2], 0},
 			{{-0.5, 0.25}, idle_uvs[current_idle_uv][3], 0},
 			{{0, 0}, coin_uvs[current_coin_uv][0], 1},
-			{{0.5, 0}, coin_uvs[current_coin_uv][1], 1},
-			{{0.5, 0.5}, coin_uvs[current_coin_uv][2], 1},
-			{{0, 0.5}, coin_uvs[current_coin_uv][3], 1},
+			{{0.25, 0}, coin_uvs[current_coin_uv][1], 1},
+			{{0.25, 0.25}, coin_uvs[current_coin_uv][2], 1},
+			{{0, 0.25}, coin_uvs[current_coin_uv][3], 1},
 		}
 
 		draw_frame(&renderer, global_vertices, global_indices)
