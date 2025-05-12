@@ -15,6 +15,7 @@ REQUIRED_EXTENSION_NAMES := []cstring{vk.KHR_SWAPCHAIN_EXTENSION_NAME}
 MAX_FRAMES_IN_FLIGHT :: 2
 WINDOW_WIDTH_INITIAL :: 800
 WINDOW_HEIGHT_INITIAL :: 600
+TEXTURE_COUNT :: 2
 TEXTURE_NAME :: "./brackeys_platformer_assets/sprites/knight.png"
 TEXTURE_NAME2 :: "./brackeys_platformer_assets/sprites/coin.png"
 VERTEX_BUFFER_SIZE :: 100_000
@@ -23,6 +24,7 @@ INDEX_BUFFER_SIZE :: 100_000
 Vertex :: struct {
 	pos:     glsl.vec2,
 	tex_pos: glsl.vec2,
+	tex_idx: u32,
 }
 
 vertex_input_binding_description := vk.VertexInputBindingDescription {
@@ -39,6 +41,7 @@ vertex_input_attribute_descriptions := []vk.VertexInputAttributeDescription {
 		format = .R32G32_SFLOAT,
 		offset = cast(u32)offset_of(Vertex, tex_pos),
 	},
+	{binding = 0, location = 2, format = .R32_UINT, offset = cast(u32)offset_of(Vertex, tex_idx)},
 }
 
 Renderer :: struct {
@@ -542,7 +545,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		sampler_descriptor := vk.DescriptorSetLayoutBinding {
 			binding         = 0,
 			descriptorType  = .COMBINED_IMAGE_SAMPLER,
-			descriptorCount = 1,
+			descriptorCount = 2,
 			stageFlags      = {.FRAGMENT},
 		}
 
@@ -841,7 +844,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
 	{ 	// create descriptor pool
 		descriptor_pool_size_sampler := vk.DescriptorPoolSize {
 			type            = .COMBINED_IMAGE_SAMPLER,
-			descriptorCount = MAX_FRAMES_IN_FLIGHT,
+			descriptorCount = TEXTURE_COUNT * MAX_FRAMES_IN_FLIGHT,
 		}
 		pool_sizes := []vk.DescriptorPoolSize{descriptor_pool_size_sampler}
 		descriptor_pool_create_info := vk.DescriptorPoolCreateInfo {
@@ -885,14 +888,23 @@ init_renderer :: proc() -> (renderer: Renderer) {
 				imageView   = renderer.texture_image_view,
 				sampler     = renderer.texture_sampler,
 			}
+			descriptor_image_info2 := vk.DescriptorImageInfo {
+				imageLayout = .SHADER_READ_ONLY_OPTIMAL,
+				imageView   = renderer.texture_image_view2,
+				sampler     = renderer.texture_sampler,
+			}
+      descriptor_image_infos := []vk.DescriptorImageInfo{
+        descriptor_image_info,
+        descriptor_image_info2,
+      }
 			descriptor_write_sampler := vk.WriteDescriptorSet {
 				sType           = .WRITE_DESCRIPTOR_SET,
 				dstSet          = renderer.descriptor_sets[i],
 				dstBinding      = 0,
 				dstArrayElement = 0,
 				descriptorType  = .COMBINED_IMAGE_SAMPLER,
-				descriptorCount = 1,
-				pImageInfo      = &descriptor_image_info,
+				descriptorCount = 2,
+				pImageInfo      = raw_data(descriptor_image_infos),
 			}
 			descriptor_writes := []vk.WriteDescriptorSet{descriptor_write_sampler}
 			vk.UpdateDescriptorSets(
