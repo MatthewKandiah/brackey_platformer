@@ -1,5 +1,6 @@
 # TODO
-- animate a coin using the coin.png spritesheet, think I'll need to create a second image and bind an array of image samplers to my fragment shader, and send the index of which sampler to use through in the vertex data
+- how do we draw a square so that it is actually square? 
+- how do we define our game entities in "world space" and map that to "screen space"?
 
 # Platformer
 Let's build a more thought through game using [Brackeys' Platformer Bundle](https://brackeysgames.itch.io/brackeys-platformer-bundle)
