@@ -63,6 +63,7 @@ main :: proc() {
 		start_time := time.now()
 		glfw.PollEvents()
 
+    // TODO - tile the whole screen with solid quads and debug why we're seeing rogue background colour pixels
 		vertices := []Vertex {
 			{{-0.5, -0.25}, idle_uvs[current_idle_uv][0], 0},
 			{{0, -0.25}, idle_uvs[current_idle_uv][1], 0},
