@@ -20,7 +20,7 @@ TEXTURE_NAMES := []cstring {
 	"./brackeys_platformer_assets/sprites/knight.png",
 	"./brackeys_platformer_assets/sprites/coin.png",
 }
-TEXTURE_COUNT :: 3
+TEXTURE_COUNT :: 2
 VERTEX_BUFFER_SIZE :: 100_000
 INDEX_BUFFER_SIZE :: 100_000
 
