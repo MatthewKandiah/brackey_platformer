@@ -9,5 +9,6 @@ layout(location = 0) out vec4 out_colour;
 layout(binding = 0) uniform sampler2D tex_sampler[2];
 
 void main() {
+  // out_colour = vec4(frag_colour, 1.0);
   out_colour = textureLod(tex_sampler[tex_idx], tex_coord, 0);
 }

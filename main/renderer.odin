@@ -19,8 +19,9 @@ WINDOW_HEIGHT_INITIAL :: 600
 TEXTURE_NAMES := []cstring {
 	"./brackeys_platformer_assets/sprites/knight.png",
 	"./brackeys_platformer_assets/sprites/coin.png",
+	"./brackeys_platformer_assets/sprites/world_tileset.png",
 }
-TEXTURE_COUNT :: 2
+TEXTURE_COUNT :: 3
 VERTEX_BUFFER_SIZE :: 100_000
 INDEX_BUFFER_SIZE :: 100_000
 

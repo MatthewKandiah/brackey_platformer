@@ -50,6 +50,8 @@ coin_uvs := [][]glsl.vec2 {
 	coin_uv_12,
 }
 
+solid_uv: []glsl.vec2 : {{0, 176}, {15, 176}, {15, 191}, {0, 191}}
+
 
 main :: proc() {
 	context.user_ptr = &gc
@@ -70,8 +72,12 @@ main :: proc() {
 			{{0.25, 0}, coin_uvs[current_coin_uv][1], 1},
 			{{0.25, 0.25}, coin_uvs[current_coin_uv][2], 1},
 			{{0, 0.25}, coin_uvs[current_coin_uv][3], 1},
+			{{0, 0.25}, solid_uv[0], 2},
+			{{0.25, 0.25}, solid_uv[1], 2},
+			{{0.25, 0.5}, solid_uv[2], 2},
+			{{0, 0.5}, solid_uv[3], 2},
 		}
-		indices := []u32{0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4}
+		indices := []u32{0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4, 8, 9, 10, 10, 11, 8}
 
 		draw_frame(&renderer, vertices, indices)
 		finish_time := time.now()
