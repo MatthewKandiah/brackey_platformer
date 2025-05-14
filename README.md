@@ -1,8 +1,7 @@
 # TODO
-- implement camera with zoom and position
-- hook the camera position and zoom up to key presses
 - add a uniform buffer object for camera pos and zoom
 - move world->screen coordinate mapping to vertex shader
+- crazy screen tearing when moving camera around, google how to fix
 
 # Platformer
 Let's build a more thought through game using [Brackeys' Platformer Bundle](https://brackeysgames.itch.io/brackeys-platformer-bundle)
