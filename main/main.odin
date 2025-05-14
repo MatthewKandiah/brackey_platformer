@@ -37,6 +37,9 @@ Drawable :: struct {
 }
 
 get_draw_data :: proc(drawables: []Drawable) -> (vertices: []Vertex, indices: []u32) {
+  if len(drawables) > MAX_DRAWABLE_COUNT {
+    panic("Cannot fit drawables into allocated vertex and index buffers")
+  }
 	for drawable, i in drawables {
 		using drawable
 		VERTEX_BACKING_BUFFER[4 * i + 0] = {

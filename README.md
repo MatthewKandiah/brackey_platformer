@@ -1,6 +1,8 @@
 # TODO
-- how do we draw a square so that it is actually square? 
-- how do we define our game entities in "world space" and map that to "screen space"?
+- switch entity fields from screen space to world space
+- generate draw data, mapping to screen coordinates such that 10 units width around (0,0)-world-space is visible, and however many vertical units fit as possible without warping the aspect ratio => do this on the host CPU when calculating drawing-data for simplicity
+- add a uniform buffer object for camera pos and zoom
+- move world->screen coordinate mapping to vertex shader
 
 # Platformer
 Let's build a more thought through game using [Brackeys' Platformer Bundle](https://brackeysgames.itch.io/brackeys-platformer-bundle)
