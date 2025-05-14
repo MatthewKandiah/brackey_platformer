@@ -1,6 +1,4 @@
 # TODO
-- switch entity fields from screen space to world space
-- generate draw data, mapping to screen coordinates such that 10 units width around (0,0)-world-space is visible, and however many vertical units fit as possible without warping the aspect ratio => do this on the host CPU when calculating drawing-data for simplicity
 - add a uniform buffer object for camera pos and zoom
 - move world->screen coordinate mapping to vertex shader
 
