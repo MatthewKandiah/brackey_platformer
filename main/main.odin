@@ -37,9 +37,9 @@ Drawable :: struct {
 }
 
 get_draw_data :: proc(drawables: []Drawable) -> (vertices: []Vertex, indices: []u32) {
-  if len(drawables) > MAX_DRAWABLE_COUNT {
-    panic("Cannot fit drawables into allocated vertex and index buffers")
-  }
+	if len(drawables) > MAX_DRAWABLE_COUNT {
+		panic("Cannot fit drawables into allocated vertex and index buffers")
+	}
 	for drawable, i in drawables {
 		using drawable
 		VERTEX_BACKING_BUFFER[4 * i + 0] = {
@@ -73,35 +73,31 @@ get_draw_data :: proc(drawables: []Drawable) -> (vertices: []Vertex, indices: []
 	return VERTEX_BACKING_BUFFER[0:len(drawables) * 4], INDEX_BACKING_BUFFER[0:len(drawables) * 6]
 }
 
-drawables := []Drawable {
-	{
-		pos = {-0.80, 0.25},
+knight :: proc(pos: Pos) -> Drawable {
+	return Drawable {
+		pos = pos,
 		dim = {0.5, 0.5},
 		tex_idx = 0,
 		tex_base_pos = {0, 0},
 		tex_dim = {32, 32},
-	},
-	{
-		pos = {-0.3, 0.25},
-		dim = {0.5, 0.25},
-		tex_idx = 0,
-		tex_base_pos = {32, 0},
-		tex_dim = {32, 32},
-	},
-	{
-		pos = {0.20, 0.25},
-		dim = {0.5, 1.0},
-		tex_idx = 0,
-		tex_base_pos = {64, 0},
-		tex_dim = {32, 32},
-	},
-	{
-		pos = {0.70, 0.25},
-		dim = {0.8, 0.8},
+	}
+}
+
+coin :: proc(pos: Pos) -> Drawable {
+	return Drawable {
+		pos = pos,
+		dim = {0.25, 0.25},
 		tex_idx = 1,
-		tex_base_pos = {80, 0},
+		tex_base_pos = {0, 0},
 		tex_dim = {16, 16},
-	},
+	}
+}
+
+drawables := []Drawable {
+	knight(pos = {-0.80, 0.25}),
+	knight(pos = {-0.50, 0.25}),
+	knight(pos = {0.20, 0.25}),
+	coin(pos = {0.50, 0.25}),
 }
 
 main :: proc() {
