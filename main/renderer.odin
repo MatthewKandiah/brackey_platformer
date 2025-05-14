@@ -25,8 +25,6 @@ TEXTURE_NAMES := []cstring {
 	"./brackeys_platformer_assets/sprites/world_tileset.png",
 }
 TEXTURE_COUNT :: 3
-VERTEX_BUFFER_SIZE :: 100_000
-INDEX_BUFFER_SIZE :: 100_000
 
 Vertex :: struct {
 	pos:     glsl.vec2,
