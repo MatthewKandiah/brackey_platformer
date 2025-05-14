@@ -36,31 +36,50 @@ Drawable :: struct {
 	tex_dim:      Dim,
 }
 
-get_draw_data :: proc(drawables: []Drawable) -> (vertices: []Vertex, indices: []u32) {
+get_draw_data :: proc(
+	screen_height_over_width: f32,
+	drawables: []Drawable,
+) -> (
+	vertices: []Vertex,
+	indices: []u32,
+) {
 	if len(drawables) > MAX_DRAWABLE_COUNT {
 		panic("Cannot fit drawables into allocated vertex and index buffers")
 	}
 	for drawable, i in drawables {
-		using drawable
+		width_world_to_screen_factor: f32 = 0.2
+		height_world_to_screen_factor: f32 =
+			width_world_to_screen_factor * screen_height_over_width
+		scaled_pos: Pos = {
+			drawable.pos.x * width_world_to_screen_factor,
+			drawable.pos.y * height_world_to_screen_factor,
+		}
+		scaled_dim: Dim = {
+			drawable.dim.w * width_world_to_screen_factor,
+			drawable.dim.h * height_world_to_screen_factor,
+		}
 		VERTEX_BACKING_BUFFER[4 * i + 0] = {
-			{pos.x - dim.w / 2, pos.y - dim.h},
-			{tex_base_pos.x, tex_base_pos.y},
-			tex_idx,
+			{scaled_pos.x - scaled_dim.w / 2, scaled_pos.y - scaled_dim.h},
+			{drawable.tex_base_pos.x, drawable.tex_base_pos.y},
+			drawable.tex_idx,
 		}
 		VERTEX_BACKING_BUFFER[4 * i + 1] = {
-			{pos.x + dim.w / 2, pos.y - dim.h},
-			{tex_base_pos.x + tex_dim.w, tex_base_pos.y},
-			tex_idx,
+			{scaled_pos.x + scaled_dim.w / 2, scaled_pos.y - scaled_dim.h},
+			{drawable.tex_base_pos.x + drawable.tex_dim.w, drawable.tex_base_pos.y},
+			drawable.tex_idx,
 		}
 		VERTEX_BACKING_BUFFER[4 * i + 2] = {
-			{pos.x + dim.w / 2, pos.y},
-			{tex_base_pos.x + tex_dim.w, tex_base_pos.y + tex_dim.h},
-			tex_idx,
+			{scaled_pos.x + scaled_dim.w / 2, scaled_pos.y},
+			{
+				drawable.tex_base_pos.x + drawable.tex_dim.w,
+				drawable.tex_base_pos.y + drawable.tex_dim.h,
+			},
+			drawable.tex_idx,
 		}
 		VERTEX_BACKING_BUFFER[4 * i + 3] = {
-			{pos.x - dim.w / 2, pos.y},
-			{tex_base_pos.x, tex_base_pos.y + tex_dim.h},
-			tex_idx,
+			{scaled_pos.x - scaled_dim.w / 2, scaled_pos.y},
+			{drawable.tex_base_pos.x, drawable.tex_base_pos.y + drawable.tex_dim.h},
+			drawable.tex_idx,
 		}
 
 		INDEX_BACKING_BUFFER[6 * i + 0] = cast(u32)(4 * i + 0)
@@ -104,11 +123,11 @@ solid :: proc(pos: Pos) -> Drawable {
 }
 
 drawables := []Drawable {
-	knight(pos = {-0.80, 0.25}),
-	knight(pos = {-0.40, 0.75}),
-	knight(pos = {0.20, 0.25}),
-	coin(pos = {0.60, 0.75}),
-	solid(pos = {0, 0.5}),
+	solid(pos = {-2, -2}),
+	solid(pos = {-1, -1}),
+	knight(pos = {0, 0}),
+	solid(pos = {1, 1}),
+	solid(pos = {2, 2}),
 }
 
 main :: proc() {
@@ -120,7 +139,10 @@ main :: proc() {
 		start_time := time.now()
 		glfw.PollEvents()
 
-		vertices, indices := get_draw_data(drawables)
+		vertices, indices := get_draw_data(
+			cast(f32)renderer.surface_extent.width / cast(f32)renderer.surface_extent.height,
+			drawables,
+		)
 
 		draw_frame(&renderer, vertices, indices)
 		finish_time := time.now()
