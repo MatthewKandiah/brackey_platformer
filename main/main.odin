@@ -15,6 +15,7 @@ INDEX_BACKING_BUFFER: [6 * MAX_DRAWABLE_COUNT]u32
 GlobalContext :: struct {
 	framebuffer_resized: bool,
 	vk_instance:         vk.Instance,
+	pressed:             PressedKeys,
 }
 
 gc: GlobalContext
@@ -136,18 +137,79 @@ drawables := []Drawable {
 	solid(pos = {2, 2}),
 }
 
+PressedKeys :: struct {
+	left:  bool,
+	right: bool,
+	up:    bool,
+	down:  bool,
+}
+
 main :: proc() {
 	context.user_ptr = &gc
 
 	renderer := init_renderer()
+	glfw.SetWindowUserPointer(renderer.window, &gc)
+
 	camera: Camera = {
-		pos         = {4, 2},
-		zoom_factor = 0.5,
+		pos         = {0, 0},
+		zoom_factor = 1,
 	}
 	for !glfw.WindowShouldClose(renderer.window) {
 		start_time := time.now()
 		glfw.PollEvents()
 
+		glfw.SetKeyCallback(
+			renderer.window,
+			proc "c" (window: glfw.WindowHandle, key: i32, scancode: i32, action: i32, mods: i32) {
+				user_ptr := cast(^GlobalContext)glfw.GetWindowUserPointer(window)
+				if key == glfw.KEY_LEFT {
+					if action == glfw.PRESS {
+						user_ptr.pressed.left = true
+					}
+					if action == glfw.RELEASE {
+						user_ptr.pressed.left = false
+					}
+				}
+				if key == glfw.KEY_RIGHT {
+					if action == glfw.PRESS {
+						user_ptr.pressed.right = true
+					}
+					if action == glfw.RELEASE {
+						user_ptr.pressed.right = false
+					}
+				}
+				if key == glfw.KEY_UP {
+					if action == glfw.PRESS {
+						user_ptr.pressed.up = true
+					}
+					if action == glfw.RELEASE {
+						user_ptr.pressed.up = false
+					}
+				}
+				if key == glfw.KEY_DOWN {
+					if action == glfw.PRESS {
+						user_ptr.pressed.down = true
+					}
+					if action == glfw.RELEASE {
+						user_ptr.pressed.down = false
+					}
+				}
+			},
+		)
+
+		speed :: 0.1
+		if gc.pressed.left {
+			camera.pos.x -= speed
+		}
+		if gc.pressed.right {
+			camera.pos.x += speed
+		}
+		if gc.pressed.up {
+			camera.zoom_factor += speed
+		}
+		if gc.pressed.down {
+			camera.zoom_factor -= speed
+		}
 
 		vertices, indices := get_draw_data(
 			camera,

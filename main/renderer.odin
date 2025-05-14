@@ -274,7 +274,6 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		)
 		if renderer.window == nil {panic("glfw create window failed")}
 
-		glfw.SetWindowUserPointer(renderer.window, &gc)
 		framebuffer_resize_callback :: proc "c" (
 			window: glfw.WindowHandle,
 			width: i32,
