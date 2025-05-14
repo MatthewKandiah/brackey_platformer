@@ -1,14 +1,3 @@
-# Debugging
-Seeing artefacts where random clusters of pixels are transparent, when they should be colours from sampled texture
-Things I've checked:
-- setting the colours to positions makes it render fine => vertex data is fine, quads are all lined up as expected
-- inspected the fragment shader inputs in renderdoc => fragment shader tex_idx and tex_pos inputs look fine for each vertex
-- disabling blending doesn't fix it => it isn't my blend operation misbehaving
-
-Things I've found:
-- renderdoc doesn't show the third texture as an `input` for the captured frame in the texture viewer. It does show it as expected in the descriptor set though
-- resizing the window changes the position, size, and number of transparent artefacts. For a given window size, they seem to generate consistently though
-
 # TODO
 - how do we draw a square so that it is actually square? 
 - how do we define our game entities in "world space" and map that to "screen space"?
