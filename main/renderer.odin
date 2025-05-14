@@ -11,7 +11,10 @@ import vk "vendor:vulkan"
 
 APP_NAME :: "Brackey Platformer"
 REQUIRED_LAYER_NAMES := []cstring{"VK_LAYER_KHRONOS_validation"} when ODIN_DEBUG else []cstring{}
-REQUIRED_EXTENSION_NAMES := []cstring{vk.KHR_SWAPCHAIN_EXTENSION_NAME, vk.EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME}
+REQUIRED_EXTENSION_NAMES := []cstring {
+	vk.KHR_SWAPCHAIN_EXTENSION_NAME,
+	vk.EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+}
 MAX_FRAMES_IN_FLIGHT :: 2
 WINDOW_WIDTH_INITIAL :: 800
 WINDOW_HEIGHT_INITIAL :: 600
@@ -348,7 +351,10 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		check_feature_support :: proc(device: vk.PhysicalDevice) -> b32 {
 			supported_features: vk.PhysicalDeviceFeatures
 			vk.GetPhysicalDeviceFeatures(device, &supported_features)
-			return supported_features.samplerAnisotropy
+			return(
+				supported_features.samplerAnisotropy &&
+				supported_features.shaderSampledImageArrayDynamicIndexing \
+			)
 		}
 
 		count: u32
@@ -415,6 +421,10 @@ init_renderer :: proc() -> (renderer: Renderer) {
 			break
 		}
 		queue_priority: f32 = 1
+		descriptor_indexing_features := vk.PhysicalDeviceDescriptorIndexingFeatures {
+      sType = .PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
+			shaderSampledImageArrayNonUniformIndexing = true,
+		}
 		device_queue_create_info := vk.DeviceQueueCreateInfo {
 			sType            = .DEVICE_QUEUE_CREATE_INFO,
 			queueFamilyIndex = renderer.queue_family_index,
@@ -431,6 +441,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
 			ppEnabledExtensionNames = raw_data(REQUIRED_EXTENSION_NAMES),
 			enabledExtensionCount   = cast(u32)len(REQUIRED_EXTENSION_NAMES),
 			pEnabledFeatures        = &required_device_features,
+			pNext            = &descriptor_indexing_features,
 		}
 		if vk.CreateDevice(renderer.physical_device, &create_info, nil, &renderer.device) !=
 		   .SUCCESS {
