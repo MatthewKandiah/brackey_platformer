@@ -76,7 +76,7 @@ get_draw_data :: proc(drawables: []Drawable) -> (vertices: []Vertex, indices: []
 knight :: proc(pos: Pos) -> Drawable {
 	return Drawable {
 		pos = pos,
-		dim = {0.5, 0.5},
+		dim = {1, 1},
 		tex_idx = 0,
 		tex_base_pos = {0, 0},
 		tex_dim = {32, 32},
@@ -86,18 +86,29 @@ knight :: proc(pos: Pos) -> Drawable {
 coin :: proc(pos: Pos) -> Drawable {
 	return Drawable {
 		pos = pos,
-		dim = {0.25, 0.25},
+		dim = {0.5, 0.5},
 		tex_idx = 1,
 		tex_base_pos = {0, 0},
 		tex_dim = {16, 16},
 	}
 }
 
+solid :: proc(pos: Pos) -> Drawable {
+	return Drawable {
+		pos = pos,
+		dim = {1, 1},
+		tex_idx = 2,
+		tex_base_pos = {0, 176},
+		tex_dim = {16, 16},
+	}
+}
+
 drawables := []Drawable {
 	knight(pos = {-0.80, 0.25}),
-	knight(pos = {-0.50, 0.25}),
+	knight(pos = {-0.40, 0.75}),
 	knight(pos = {0.20, 0.25}),
-	coin(pos = {0.50, 0.25}),
+	coin(pos = {0.60, 0.75}),
+	solid(pos = {0, 0.5}),
 }
 
 main :: proc() {
