@@ -1,4 +1,6 @@
 # TODO
+- implement camera with zoom and position
+- hook the camera position and zoom up to key presses
 - add a uniform buffer object for camera pos and zoom
 - move world->screen coordinate mapping to vertex shader
 
