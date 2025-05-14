@@ -36,8 +36,13 @@ Drawable :: struct {
 	tex_dim:      Dim,
 }
 
+Camera :: struct {
+	pos:         Pos,
+	zoom_factor: f32,
+}
+
 get_draw_data :: proc(
-	world_units_that_fit_in_width: f32,
+	camera: Camera,
 	screen_height_over_width: f32,
 	drawables: []Drawable,
 ) -> (
@@ -48,12 +53,12 @@ get_draw_data :: proc(
 		panic("Cannot fit drawables into allocated vertex and index buffers")
 	}
 	for drawable, i in drawables {
-		width_world_to_screen_factor: f32 = 2 / world_units_that_fit_in_width
+		width_world_to_screen_factor: f32 = camera.zoom_factor * 2 / 10
 		height_world_to_screen_factor: f32 =
 			width_world_to_screen_factor * screen_height_over_width
 		scaled_pos: Pos = {
-			drawable.pos.x * width_world_to_screen_factor,
-			drawable.pos.y * height_world_to_screen_factor,
+			(drawable.pos.x - camera.pos.x) * width_world_to_screen_factor,
+			(drawable.pos.y - camera.pos.y) * height_world_to_screen_factor,
 		}
 		scaled_dim: Dim = {
 			drawable.dim.w * width_world_to_screen_factor,
@@ -135,13 +140,17 @@ main :: proc() {
 	context.user_ptr = &gc
 
 	renderer := init_renderer()
-
+	camera: Camera = {
+		pos         = {4, 2},
+		zoom_factor = 0.5,
+	}
 	for !glfw.WindowShouldClose(renderer.window) {
 		start_time := time.now()
 		glfw.PollEvents()
 
+
 		vertices, indices := get_draw_data(
-			10,
+			camera,
 			cast(f32)renderer.surface_extent.width / cast(f32)renderer.surface_extent.height,
 			drawables,
 		)
