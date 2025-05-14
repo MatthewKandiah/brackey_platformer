@@ -37,6 +37,7 @@ Drawable :: struct {
 }
 
 get_draw_data :: proc(
+	world_units_that_fit_in_width: f32,
 	screen_height_over_width: f32,
 	drawables: []Drawable,
 ) -> (
@@ -47,7 +48,7 @@ get_draw_data :: proc(
 		panic("Cannot fit drawables into allocated vertex and index buffers")
 	}
 	for drawable, i in drawables {
-		width_world_to_screen_factor: f32 = 0.2
+		width_world_to_screen_factor: f32 = 2 / world_units_that_fit_in_width
 		height_world_to_screen_factor: f32 =
 			width_world_to_screen_factor * screen_height_over_width
 		scaled_pos: Pos = {
@@ -140,6 +141,7 @@ main :: proc() {
 		glfw.PollEvents()
 
 		vertices, indices := get_draw_data(
+			10,
 			cast(f32)renderer.surface_extent.width / cast(f32)renderer.surface_extent.height,
 			drawables,
 		)
