@@ -19,7 +19,6 @@ GlobalContext :: struct {
 }
 
 gc: GlobalContext
-NANOSECONDS_PER_FRAME :: 16_666_667
 
 Pos :: struct {
 	x, y: f32,
@@ -150,6 +149,14 @@ main :: proc() {
 	renderer := init_renderer()
 	glfw.SetWindowUserPointer(renderer.window, &gc)
 
+	vid_mode := glfw.GetVideoMode(renderer.monitor)
+	if vid_mode == nil {
+		panic("failed to get monitor video mode")
+	}
+	refresh_rate := cast(f64)vid_mode.refresh_rate
+	NANOSECONDS_PER_FRAME: f64 = 1_000_000_000 / refresh_rate
+  fmt.println(NANOSECONDS_PER_FRAME)
+
 	camera: Camera = {
 		pos         = {0, 0},
 		zoom_factor = 1,
@@ -197,7 +204,7 @@ main :: proc() {
 			},
 		)
 
-		speed :: 0.1
+		speed :: 0.04
 		if gc.pressed.left {
 			camera.pos.x -= speed
 		}
@@ -220,7 +227,10 @@ main :: proc() {
 		draw_frame(&renderer, vertices, indices)
 		finish_time := time.now()
 		frame_duration := time.diff(start_time, finish_time)
-		wait_duration := max(NANOSECONDS_PER_FRAME * time.Nanosecond - frame_duration, 0)
+		wait_duration := max(
+			cast(time.Duration)NANOSECONDS_PER_FRAME * time.Nanosecond - frame_duration,
+			0,
+		)
 		time.accurate_sleep(wait_duration)
 	}
 	vk.DeviceWaitIdle(renderer.device)

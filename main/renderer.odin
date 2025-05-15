@@ -86,6 +86,7 @@ Renderer :: struct {
 	descriptor_set_layout:           vk.DescriptorSetLayout,
 	descriptor_pool:                 vk.DescriptorPool,
 	descriptor_sets:                 [MAX_FRAMES_IN_FLIGHT]vk.DescriptorSet,
+	monitor:                         glfw.MonitorHandle,
 }
 
 draw_frame :: proc(renderer: ^Renderer, vertices: []Vertex, indices: []u32) {
@@ -283,6 +284,11 @@ init_renderer :: proc() -> (renderer: Renderer) {
 			user_ptr.framebuffer_resized = true
 		}
 		glfw.SetFramebufferSizeCallback(renderer.window, framebuffer_resize_callback)
+
+		renderer.monitor = glfw.GetPrimaryMonitor()
+		if renderer.monitor == nil {
+			panic("failed to get monitor")
+		}
 	}
 
 	{ 	// initialise Vulkan instance
@@ -419,7 +425,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
 		}
 		queue_priority: f32 = 1
 		descriptor_indexing_features := vk.PhysicalDeviceDescriptorIndexingFeatures {
-      sType = .PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
+			sType                                     = .PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
 			shaderSampledImageArrayNonUniformIndexing = true,
 		}
 		device_queue_create_info := vk.DeviceQueueCreateInfo {
@@ -438,7 +444,7 @@ init_renderer :: proc() -> (renderer: Renderer) {
 			ppEnabledExtensionNames = raw_data(REQUIRED_EXTENSION_NAMES),
 			enabledExtensionCount   = cast(u32)len(REQUIRED_EXTENSION_NAMES),
 			pEnabledFeatures        = &required_device_features,
-			pNext            = &descriptor_indexing_features,
+			pNext                   = &descriptor_indexing_features,
 		}
 		if vk.CreateDevice(renderer.physical_device, &create_info, nil, &renderer.device) !=
 		   .SUCCESS {
