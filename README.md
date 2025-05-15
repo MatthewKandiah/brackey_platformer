@@ -1,6 +1,4 @@
 # TODO
-- add a uniform buffer object for camera pos and zoom
-- move world->screen coordinate mapping to vertex shader
 - crazy screen tearing when moving camera around, google how to fix
 
 # Platformer
