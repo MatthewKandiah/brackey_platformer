@@ -880,9 +880,9 @@ init_renderer :: proc() -> (renderer: Renderer) {
 	}
 
 	{ 	// allocate descriptor sets and hook them up to relevant resources
-		layouts := [MAX_FRAMES_IN_FLIGHT]vk.DescriptorSetLayout {
-			renderer.descriptor_set_layout,
-			renderer.descriptor_set_layout,
+		layouts: [MAX_FRAMES_IN_FLIGHT]vk.DescriptorSetLayout
+		for i in 0 ..< MAX_FRAMES_IN_FLIGHT {
+			layouts[i] = renderer.descriptor_set_layout
 		}
 		allocate_info := vk.DescriptorSetAllocateInfo {
 			sType              = .DESCRIPTOR_SET_ALLOCATE_INFO,
