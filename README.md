@@ -1,6 +1,3 @@
-# TODO
-- crazy screen tearing when moving camera around, google how to fix
-
 # Platformer
 Let's build a more thought through game using [Brackeys' Platformer Bundle](https://brackeysgames.itch.io/brackeys-platformer-bundle)
 
