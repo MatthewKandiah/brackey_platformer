@@ -25,6 +25,11 @@ TEXTURE_NAMES := []cstring {
 	"./brackeys_platformer_assets/sprites/world_tileset.png",
 }
 TEXTURE_COUNT :: 3
+MAX_DRAWABLE_COUNT :: 100_000
+VERTEX_BUFFER_SIZE :: 4 * MAX_DRAWABLE_COUNT * size_of(Vertex)
+INDEX_BUFFER_SIZE :: 6 * MAX_DRAWABLE_COUNT * size_of(u32)
+VERTEX_BACKING_BUFFER: [4 * MAX_DRAWABLE_COUNT]Vertex
+INDEX_BACKING_BUFFER: [6 * MAX_DRAWABLE_COUNT]u32
 
 Vertex :: struct {
 	pos:     glsl.vec2,
@@ -87,6 +92,76 @@ Renderer :: struct {
 	descriptor_pool:                 vk.DescriptorPool,
 	descriptor_sets:                 [MAX_FRAMES_IN_FLIGHT]vk.DescriptorSet,
 	monitor:                         glfw.MonitorHandle,
+}
+
+get_draw_data :: proc(
+	camera: Camera,
+	screen_height_over_width: f32,
+	drawables: []Drawable,
+) -> (
+	vertices: []Vertex,
+	indices: []u32,
+) {
+	if len(drawables) > MAX_DRAWABLE_COUNT {
+		panic("Cannot fit drawables into allocated vertex and index buffers")
+	}
+	for drawable, i in drawables {
+		width_world_to_screen_factor: f32 = camera.zoom_factor * 2 / 10
+		height_world_to_screen_factor: f32 =
+			width_world_to_screen_factor * screen_height_over_width
+		scaled_pos: Pos = {
+			(drawable.pos.x - camera.pos.x) * width_world_to_screen_factor,
+			(drawable.pos.y - camera.pos.y) * height_world_to_screen_factor,
+		}
+		scaled_dim: Dim = {
+			drawable.dim.w * width_world_to_screen_factor,
+			drawable.dim.h * height_world_to_screen_factor,
+		}
+		VERTEX_BACKING_BUFFER[4 * i + 0] = {
+			{scaled_pos.x - scaled_dim.w / 2, scaled_pos.y - scaled_dim.h},
+			{drawable.tex_base_pos.x, drawable.tex_base_pos.y},
+			drawable.tex_idx,
+		}
+		VERTEX_BACKING_BUFFER[4 * i + 1] = {
+			{scaled_pos.x + scaled_dim.w / 2, scaled_pos.y - scaled_dim.h},
+			{drawable.tex_base_pos.x + drawable.tex_dim.w, drawable.tex_base_pos.y},
+			drawable.tex_idx,
+		}
+		VERTEX_BACKING_BUFFER[4 * i + 2] = {
+			{scaled_pos.x + scaled_dim.w / 2, scaled_pos.y},
+			{
+				drawable.tex_base_pos.x + drawable.tex_dim.w,
+				drawable.tex_base_pos.y + drawable.tex_dim.h,
+			},
+			drawable.tex_idx,
+		}
+		VERTEX_BACKING_BUFFER[4 * i + 3] = {
+			{scaled_pos.x - scaled_dim.w / 2, scaled_pos.y},
+			{drawable.tex_base_pos.x, drawable.tex_base_pos.y + drawable.tex_dim.h},
+			drawable.tex_idx,
+		}
+
+		INDEX_BACKING_BUFFER[6 * i + 0] = cast(u32)(4 * i + 0)
+		INDEX_BACKING_BUFFER[6 * i + 1] = cast(u32)(4 * i + 1)
+		INDEX_BACKING_BUFFER[6 * i + 2] = cast(u32)(4 * i + 2)
+		INDEX_BACKING_BUFFER[6 * i + 3] = cast(u32)(4 * i + 2)
+		INDEX_BACKING_BUFFER[6 * i + 4] = cast(u32)(4 * i + 3)
+		INDEX_BACKING_BUFFER[6 * i + 5] = cast(u32)(4 * i + 0)
+	}
+	return VERTEX_BACKING_BUFFER[0:len(drawables) * 4], INDEX_BACKING_BUFFER[0:len(drawables) * 6]
+}
+
+Drawable :: struct {
+	pos:          Pos,
+	dim:          Dim,
+	tex_idx:      u32,
+	tex_base_pos: Pos,
+	tex_dim:      Dim,
+}
+
+Camera :: struct {
+	pos:         Pos,
+	zoom_factor: f32,
 }
 
 draw_frame :: proc(
