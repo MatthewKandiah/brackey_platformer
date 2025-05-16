@@ -218,13 +218,12 @@ main :: proc() {
 			camera.zoom_factor -= speed
 		}
 
-		vertices, indices := get_draw_data(
+		draw_frame(
+			&renderer,
+			drawables,
 			camera,
 			cast(f32)renderer.surface_extent.width / cast(f32)renderer.surface_extent.height,
-			drawables,
 		)
-
-		draw_frame(&renderer, vertices, indices)
 		finish_time := time.now()
 		frame_duration := time.diff(start_time, finish_time)
 		wait_duration := max(

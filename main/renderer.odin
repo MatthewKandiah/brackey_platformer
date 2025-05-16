@@ -89,7 +89,13 @@ Renderer :: struct {
 	monitor:                         glfw.MonitorHandle,
 }
 
-draw_frame :: proc(renderer: ^Renderer, vertices: []Vertex, indices: []u32) {
+draw_frame :: proc(
+	renderer: ^Renderer,
+	drawables: []Drawable,
+	camera: Camera,
+	screen_height_over_width: f32,
+) {
+	vertices, indices := get_draw_data(camera, screen_height_over_width, drawables)
 	if len(vertices) >
 	   VERTEX_BUFFER_SIZE {panic("ASSERT: vertex data for draw call will not fit in vertex buffer")}
 	if len(indices) >
