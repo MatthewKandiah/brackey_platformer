@@ -6,6 +6,21 @@ import "core:mem"
 
 Game :: struct {
 	game_map: Map,
+	player:   Player,
+}
+
+Player :: struct {
+	pos: Pos,
+}
+
+player_to_drawable :: proc(player: Player) -> Drawable {
+	return Drawable {
+		pos = player.pos,
+		dim = {1, 1},
+		tex_idx = 0,
+		tex_base_pos = {0, 0},
+		tex_dim = {32, 32},
+	}
 }
 
 Map :: struct {

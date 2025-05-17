@@ -23,16 +23,6 @@ Dim :: struct {
 	w, h: f32,
 }
 
-knight :: proc(pos: Pos) -> Drawable {
-	return Drawable {
-		pos = pos,
-		dim = {1, 1},
-		tex_idx = 0,
-		tex_base_pos = {0, 0},
-		tex_dim = {32, 32},
-	}
-}
-
 coin :: proc(pos: Pos) -> Drawable {
 	return Drawable {
 		pos = pos,
@@ -53,14 +43,6 @@ solid :: proc(pos: Pos) -> Drawable {
 	}
 }
 
-foreground_drawables := []Drawable {
-	solid(pos = {-2, -2}),
-	solid(pos = {-1, -1}),
-	knight(pos = {0, 0}),
-	coin(pos = {1, 1}),
-	coin(pos = {2, 2}),
-}
-
 PressedKeys :: struct {
 	left:  bool,
 	right: bool,
@@ -71,18 +53,10 @@ PressedKeys :: struct {
 main :: proc() {
 	context.user_ptr = &gc
 
-	game_map := init_map()
-
-	map_drawable_count := len(game_map.tiles)
-	foreground_drawable_count := len(foreground_drawables)
-	total_drawable_count := map_drawable_count + foreground_drawable_count
-	map_to_drawables(game_map, {0, 0}, {1, 1}, DRAWABLE_BACKING_BUFFER[0:map_drawable_count])
-	intrinsics.mem_copy_non_overlapping(
-		&DRAWABLE_BACKING_BUFFER[map_drawable_count],
-		raw_data(foreground_drawables),
-		foreground_drawable_count * size_of(Drawable),
-	)
-	drawables := DRAWABLE_BACKING_BUFFER[0:total_drawable_count]
+	game := Game {
+		game_map = init_map(),
+		player = Player{pos = {0, 0}},
+	}
 
 	renderer := init_renderer()
 	glfw.SetWindowUserPointer(renderer.window, &gc)
@@ -95,7 +69,7 @@ main :: proc() {
 	NANOSECONDS_PER_FRAME: f64 = 1_000_000_000 / refresh_rate
 
 	camera: Camera = {
-		pos         = {0, 0},
+		pos         = game.player.pos,
 		zoom_factor = 1,
 	}
 	for !glfw.WindowShouldClose(renderer.window) {
@@ -143,10 +117,12 @@ main :: proc() {
 
 		speed :: 0.04
 		if gc.pressed.left {
-			camera.pos.x -= speed
+			game.player.pos.x -= speed
+			camera.pos = game.player.pos
 		}
 		if gc.pressed.right {
-			camera.pos.x += speed
+			game.player.pos.x += speed
+			camera.pos = game.player.pos
 		}
 		if gc.pressed.up {
 			camera.zoom_factor += speed
@@ -154,6 +130,18 @@ main :: proc() {
 		if gc.pressed.down {
 			camera.zoom_factor -= speed
 		}
+
+		map_drawable_count := len(game.game_map.tiles)
+		total_drawable_count := map_drawable_count
+		map_to_drawables(
+			game.game_map,
+			{0, 0},
+			{0.5, 0.5},
+			DRAWABLE_BACKING_BUFFER[0:map_drawable_count],
+		)
+		DRAWABLE_BACKING_BUFFER[map_drawable_count] = player_to_drawable(game.player)
+		total_drawable_count += 1
+		drawables := DRAWABLE_BACKING_BUFFER[0:total_drawable_count]
 
 		draw_frame(
 			&renderer,
