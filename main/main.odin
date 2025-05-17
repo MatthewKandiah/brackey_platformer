@@ -23,31 +23,13 @@ Dim :: struct {
 	w, h: f32,
 }
 
-coin :: proc(pos: Pos) -> Drawable {
-	return Drawable {
-		pos = pos,
-		dim = {0.5, 0.5},
-		tex_idx = 1,
-		tex_base_pos = {0, 0},
-		tex_dim = {16, 16},
-	}
-}
-
-solid :: proc(pos: Pos) -> Drawable {
-	return Drawable {
-		pos = pos,
-		dim = {1, 1},
-		tex_idx = 2,
-		tex_base_pos = {0, 176},
-		tex_dim = {16, 16},
-	}
-}
-
 PressedKeys :: struct {
 	left:  bool,
 	right: bool,
 	up:    bool,
 	down:  bool,
+	p:     bool,
+	f:     bool,
 }
 
 main :: proc() {
@@ -96,6 +78,22 @@ main :: proc() {
 					user_ptr.pressed.down = false
 				}
 			}
+			if key == glfw.KEY_P {
+				if action == glfw.PRESS {
+					user_ptr.pressed.p = true
+				}
+				if action == glfw.RELEASE {
+					user_ptr.pressed.p = false
+				}
+			}
+			if key == glfw.KEY_F {
+				if action == glfw.PRESS {
+					user_ptr.pressed.f = true
+				}
+				if action == glfw.RELEASE {
+					user_ptr.pressed.f = false
+				}
+			}
 		},
 	)
 
@@ -124,9 +122,17 @@ main :: proc() {
 			camera.pos = game.player.pos
 		}
 		if gc.pressed.up {
-			camera.zoom_factor += speed
+			game.player.pos.y -= speed
+			camera.pos = game.player.pos
 		}
 		if gc.pressed.down {
+			game.player.pos.y += speed
+			camera.pos = game.player.pos
+		}
+		if gc.pressed.p {
+			camera.zoom_factor += speed
+		}
+		if gc.pressed.f {
 			camera.zoom_factor -= speed
 		}
 
