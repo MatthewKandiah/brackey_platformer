@@ -9,6 +9,21 @@ Game :: struct {
 	player:   Player,
 }
 
+game_to_drawables :: proc(game: Game) -> []Drawable {
+	map_drawable_count := len(game.game_map.tiles)
+	total_drawable_count := map_drawable_count
+	map_to_drawables(
+		game.game_map,
+		{0, 0},
+		{0.5, 0.5},
+		DRAWABLE_BACKING_BUFFER[0:map_drawable_count],
+	)
+	DRAWABLE_BACKING_BUFFER[map_drawable_count] = player_to_drawable(game.player)
+	total_drawable_count += 1
+	drawables := DRAWABLE_BACKING_BUFFER[0:total_drawable_count]
+	return drawables
+}
+
 Player :: struct {
 	pos: Pos,
 }

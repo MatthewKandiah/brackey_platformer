@@ -11,6 +11,7 @@ GlobalContext :: struct {
 	framebuffer_resized: bool,
 	vk_instance:         vk.Instance,
 	pressed:             PressedKeys,
+	running:             bool,
 }
 
 gc: GlobalContext
@@ -30,9 +31,11 @@ PressedKeys :: struct {
 	down:  bool,
 	p:     bool,
 	f:     bool,
+	esc:   bool,
 }
 
 main :: proc() {
+	gc.running = true
 	context.user_ptr = &gc
 
 	game := Game {
@@ -94,6 +97,14 @@ main :: proc() {
 					user_ptr.pressed.f = false
 				}
 			}
+			if key == glfw.KEY_ESCAPE {
+				if action == glfw.PRESS {
+					user_ptr.pressed.esc = true
+				}
+				if action == glfw.RELEASE {
+					user_ptr.pressed.esc = false
+				}
+			}
 		},
 	)
 
@@ -108,7 +119,7 @@ main :: proc() {
 		pos         = game.player.pos,
 		zoom_factor = 1,
 	}
-	for !glfw.WindowShouldClose(renderer.window) {
+	for gc.running && !glfw.WindowShouldClose(renderer.window) {
 		start_time := time.now()
 		glfw.PollEvents()
 
@@ -135,19 +146,11 @@ main :: proc() {
 		if gc.pressed.f {
 			camera.zoom_factor -= speed
 		}
+		if gc.pressed.esc {
+			gc.running = false
+		}
 
-		map_drawable_count := len(game.game_map.tiles)
-		total_drawable_count := map_drawable_count
-		map_to_drawables(
-			game.game_map,
-			{0, 0},
-			{0.5, 0.5},
-			DRAWABLE_BACKING_BUFFER[0:map_drawable_count],
-		)
-		DRAWABLE_BACKING_BUFFER[map_drawable_count] = player_to_drawable(game.player)
-		total_drawable_count += 1
-		drawables := DRAWABLE_BACKING_BUFFER[0:total_drawable_count]
-
+		drawables := game_to_drawables(game)
 		draw_frame(
 			&renderer,
 			drawables,
