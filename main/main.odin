@@ -60,6 +60,44 @@ main :: proc() {
 
 	renderer := init_renderer()
 	glfw.SetWindowUserPointer(renderer.window, &gc)
+	glfw.SetKeyCallback(
+		renderer.window,
+		proc "c" (window: glfw.WindowHandle, key: i32, scancode: i32, action: i32, mods: i32) {
+			user_ptr := cast(^GlobalContext)glfw.GetWindowUserPointer(window)
+			if key == glfw.KEY_LEFT {
+				if action == glfw.PRESS {
+					user_ptr.pressed.left = true
+				}
+				if action == glfw.RELEASE {
+					user_ptr.pressed.left = false
+				}
+			}
+			if key == glfw.KEY_RIGHT {
+				if action == glfw.PRESS {
+					user_ptr.pressed.right = true
+				}
+				if action == glfw.RELEASE {
+					user_ptr.pressed.right = false
+				}
+			}
+			if key == glfw.KEY_UP {
+				if action == glfw.PRESS {
+					user_ptr.pressed.up = true
+				}
+				if action == glfw.RELEASE {
+					user_ptr.pressed.up = false
+				}
+			}
+			if key == glfw.KEY_DOWN {
+				if action == glfw.PRESS {
+					user_ptr.pressed.down = true
+				}
+				if action == glfw.RELEASE {
+					user_ptr.pressed.down = false
+				}
+			}
+		},
+	)
 
 	vid_mode := glfw.GetVideoMode(renderer.monitor)
 	if vid_mode == nil {
@@ -75,45 +113,6 @@ main :: proc() {
 	for !glfw.WindowShouldClose(renderer.window) {
 		start_time := time.now()
 		glfw.PollEvents()
-
-		glfw.SetKeyCallback(
-			renderer.window,
-			proc "c" (window: glfw.WindowHandle, key: i32, scancode: i32, action: i32, mods: i32) {
-				user_ptr := cast(^GlobalContext)glfw.GetWindowUserPointer(window)
-				if key == glfw.KEY_LEFT {
-					if action == glfw.PRESS {
-						user_ptr.pressed.left = true
-					}
-					if action == glfw.RELEASE {
-						user_ptr.pressed.left = false
-					}
-				}
-				if key == glfw.KEY_RIGHT {
-					if action == glfw.PRESS {
-						user_ptr.pressed.right = true
-					}
-					if action == glfw.RELEASE {
-						user_ptr.pressed.right = false
-					}
-				}
-				if key == glfw.KEY_UP {
-					if action == glfw.PRESS {
-						user_ptr.pressed.up = true
-					}
-					if action == glfw.RELEASE {
-						user_ptr.pressed.up = false
-					}
-				}
-				if key == glfw.KEY_DOWN {
-					if action == glfw.PRESS {
-						user_ptr.pressed.down = true
-					}
-					if action == glfw.RELEASE {
-						user_ptr.pressed.down = false
-					}
-				}
-			},
-		)
 
 		speed :: 0.04
 		if gc.pressed.left {
