@@ -1,5 +1,6 @@
 package main
 
+import "base:intrinsics"
 import "core:fmt"
 import "core:math/linalg/glsl"
 import "core:time"
@@ -52,7 +53,7 @@ solid :: proc(pos: Pos) -> Drawable {
 	}
 }
 
-drawables := []Drawable {
+foreground_drawables := []Drawable {
 	solid(pos = {-2, -2}),
 	solid(pos = {-1, -1}),
 	knight(pos = {0, 0}),
@@ -69,6 +70,19 @@ PressedKeys :: struct {
 
 main :: proc() {
 	context.user_ptr = &gc
+
+	game_map := init_map()
+
+	map_drawable_count := len(game_map.tiles)
+	foreground_drawable_count := len(foreground_drawables)
+	total_drawable_count := map_drawable_count + foreground_drawable_count
+	map_to_drawables(game_map, {0, 0}, {1, 1}, DRAWABLE_BACKING_BUFFER[0:map_drawable_count])
+	intrinsics.mem_copy_non_overlapping(
+		&DRAWABLE_BACKING_BUFFER[map_drawable_count],
+		raw_data(foreground_drawables),
+		foreground_drawable_count * size_of(Drawable),
+	)
+	drawables := DRAWABLE_BACKING_BUFFER[0:total_drawable_count]
 
 	renderer := init_renderer()
 	glfw.SetWindowUserPointer(renderer.window, &gc)
