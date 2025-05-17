@@ -14,12 +14,14 @@ Player :: struct {
 }
 
 player_to_drawable :: proc(player: Player) -> Drawable {
+	original_tile_size: f32 : 32
+	bottom_margin: f32 : 4
 	return Drawable {
 		pos = player.pos,
 		dim = {1, 1},
 		tex_idx = 0,
 		tex_base_pos = {0, 0},
-		tex_dim = {32, 32},
+		tex_dim = {original_tile_size, original_tile_size - bottom_margin},
 	}
 }
 
