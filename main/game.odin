@@ -3,6 +3,7 @@ package main
 import "base:intrinsics"
 import "core:fmt"
 import "core:mem"
+import "vendor:glfw"
 
 Game :: struct {
 	game_map: Map,
@@ -147,4 +148,84 @@ map_to_drawables :: proc(
 		}
 		drawables_buf[idx] = drawable
 	}
+}
+
+Pos :: struct {
+	x, y: f32,
+}
+
+Vel :: struct {
+	x, y: f32,
+}
+
+Dim :: struct {
+	w, h: f32,
+}
+
+KeyEvent :: struct {
+	key:    Key,
+	action: KeyAction,
+}
+
+Key :: enum {
+	left,
+	right,
+	up,
+	down,
+	p,
+	f,
+	esc,
+}
+
+key_from_glfw :: proc "c" (glfw_key: i32) -> (k: Key, success: bool) {
+	switch glfw_key {
+	case glfw.KEY_LEFT:
+		return .left, true
+	case glfw.KEY_RIGHT:
+		return .right, true
+	case glfw.KEY_UP:
+		return .up, true
+	case glfw.KEY_DOWN:
+		return .down, true
+	case glfw.KEY_P:
+		return .p, true
+	case glfw.KEY_F:
+		return .f, true
+	case glfw.KEY_ESCAPE:
+		return .esc, true
+	}
+	return nil, false
+}
+
+KeyAction :: enum {
+	pressed,
+	released,
+}
+
+action_from_glfw :: proc "c" (glfw_action: i32) -> (a: KeyAction, success: bool) {
+	switch glfw_action {
+	case glfw.PRESS:
+		return .pressed, true
+	case glfw.RELEASE:
+		return .released, true
+	}
+	return nil, false
+}
+
+handle_key_press :: proc "c" (
+	window: glfw.WindowHandle,
+	glfw_key: i32,
+	glfw_scancode: i32,
+	glfw_action: i32,
+	glfw_mods: i32,
+) {
+	user_ptr := cast(^GlobalContext)glfw.GetWindowUserPointer(window)
+	key, key_success := key_from_glfw(glfw_key)
+	action, action_success := action_from_glfw(glfw_action)
+	if !key_success || !action_success {return}
+	KEY_EVENT_BACKING_BUFFER[user_ptr.key_events_count] = KeyEvent {
+		key    = key,
+		action = action,
+	}
+	user_ptr.key_events_count += 1
 }
