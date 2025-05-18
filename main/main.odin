@@ -19,6 +19,20 @@ GlobalContext :: struct {
 
 gc: GlobalContext
 
+quads_overlap :: proc(p1: Pos, d1: Dim, p2: Pos, d2: Dim) -> bool {
+	top1 := p1.y + d1.h
+	top2 := p2.y + d2.h
+	bot1 := p1.y
+	bot2 := p2.y
+
+	left1 := p1.x - d1.w / 2
+	left2 := p2.x - d2.w / 2
+	right1 := p1.x + d1.w / 2
+	right2 := p2.x + d2.w / 2
+
+	return !(bot1 > top2 || bot2 > top1 || right1 < left2 || right2 < left1)
+}
+
 main :: proc() {
 	gc.running = true
 	context.user_ptr = &gc
@@ -96,14 +110,30 @@ main :: proc() {
 				}
 			}
 			gc.key_events_count = 0
-			game.player.pos = {
+
+			next_pos := Pos {
 				game.player.pos.x + game.player.vel.x,
 				game.player.pos.y + game.player.vel.y,
 			}
+			for map_tile, i in game.game_map.tiles {
+				if map_tile == .empty {continue}
+				map_tile_world_pos := map_tile_pos(game.game_map, i)
+				if quads_overlap(
+					next_pos,
+					game.player.collision_dim,
+					map_tile_world_pos,
+					game.game_map.tile_world_dim,
+				) {
+					next_pos = game.player.pos
+					game.player.vel.y = 0
+					break
+				}
+			}
+			game.player.pos = next_pos
 			camera.pos = game.player.pos
 		}
 
-		{ 	// current game state
+		{ 	// draw current game state
 			drawables := game_to_drawables(game)
 			draw_frame(
 				&renderer,

@@ -43,12 +43,13 @@ background_to_drawable :: proc() -> Drawable {
 }
 
 Player :: struct {
-	pos: Pos,
-	vel: Vel,
+	pos:           Pos,
+	vel:           Vel,
+	collision_dim: Dim,
 }
 
 init_player :: proc() -> Player {
-	return {pos = {0, 1}, vel = {0, -0.05}}
+	return {pos = {0, 1}, vel = {0, -0.01}, collision_dim = {0.3, 0.6}}
 }
 
 player_to_drawable :: proc(player: Player) -> Drawable {
@@ -120,6 +121,13 @@ init_map :: proc() -> (m: Map) {
 		size_of(MapTile) * len(tiles),
 	)
 	return m
+}
+
+map_tile_pos :: proc(m: Map, idx: int) -> Pos {
+	if idx >= len(m.tiles) {panic("idx out of bounds for map tiles")}
+	x := m.base_world_pos.x + cast(f32)(idx % m.width) * m.tile_world_dim.w
+	y := m.base_world_pos.y - cast(f32)(idx / m.width) * m.tile_world_dim.h
+	return {x, y}
 }
 
 map_tile_tex_info :: proc(mt: MapTile) -> (tex_idx: u32, tex_base_pos: Pos, tex_dim: Dim) {
