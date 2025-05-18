@@ -81,31 +81,37 @@ init_map :: proc() -> (m: Map) {
 	m.base_world_pos = MAP_BASE_WORLD_POS
 	m.tile_world_dim = MAP_TILE_WORLD_DIM
 	tiles := []MapTile {
+		// bottom
 		.grass,
 		.grass,
 		.grass,
 		.grass,
 		.grass,
+		//
 		.dirt,
 		.dirt,
 		.dirt,
 		.dirt,
 		.dirt,
+		//
 		.grass,
 		.grass,
 		.empty,
 		.grass,
 		.grass,
+		//
 		.dirt,
 		.dirt,
 		.dirt,
 		.dirt,
 		.dirt,
-		.grass,
-		.grass,
-		.grass,
-		.grass,
-		.grass,
+		//
+		.dirt,
+		.dirt,
+		.dirt,
+		.dirt,
+		.dirt,
+		// top
 	}
 	m.tiles = make([]MapTile, len(tiles))
 	intrinsics.mem_copy_non_overlapping(
