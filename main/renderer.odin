@@ -111,7 +111,7 @@ get_draw_data :: proc(
 			width_world_to_screen_factor * screen_height_over_width
 		scaled_pos: Pos = {
 			(drawable.pos.x - camera.pos.x) * width_world_to_screen_factor,
-			(drawable.pos.y - camera.pos.y) * height_world_to_screen_factor,
+			(drawable.pos.y - camera.pos.y) * height_world_to_screen_factor * (-1),
 		}
 		scaled_dim: Dim = {
 			drawable.dim.w * width_world_to_screen_factor,

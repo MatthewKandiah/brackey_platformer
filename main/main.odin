@@ -145,7 +145,7 @@ main :: proc() {
 				}
 				if ke.key == .up {
 					if ke.action == .pressed {
-						game.player.vel.y = -speed
+						game.player.vel.y = speed
 					}
 					if ke.action == .released {
 						game.player.vel.y = 0
@@ -153,7 +153,7 @@ main :: proc() {
 				}
 				if ke.key == .down {
 					if ke.action == .pressed {
-						game.player.vel.y = speed
+						game.player.vel.y = -speed
 					}
 					if ke.action == .released {
 						game.player.vel.y = 0

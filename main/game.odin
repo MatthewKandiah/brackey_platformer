@@ -32,7 +32,7 @@ Player :: struct {
 }
 
 init_player :: proc() -> Player {
-	return {pos = {0, -0.5}, vel = {0, 0}}
+	return {pos = {0, 0}, vel = {0, 0}}
 }
 
 player_to_drawable :: proc(player: Player) -> Drawable {
