@@ -21,8 +21,6 @@ game_to_drawables :: proc(game: Game) -> []Drawable {
 	map_drawable_count := len(game.game_map.tiles)
 	map_to_drawables(
 		game.game_map,
-		MAP_BASE_WORLD_POS,
-		MAP_TILE_WORLD_DIM,
 		DRAWABLE_BACKING_BUFFER[total_drawable_count:total_drawable_count + map_drawable_count],
 	)
 	total_drawable_count += map_drawable_count
@@ -66,8 +64,10 @@ player_to_drawable :: proc(player: Player) -> Drawable {
 }
 
 Map :: struct {
-	width: int,
-	tiles: []MapTile,
+	width:          int,
+	tiles:          []MapTile,
+	base_world_pos: Pos,
+	tile_world_dim: Dim,
 }
 
 MapTile :: enum {
@@ -78,6 +78,8 @@ MapTile :: enum {
 
 init_map :: proc() -> (m: Map) {
 	m.width = 5
+	m.base_world_pos = MAP_BASE_WORLD_POS
+	m.tile_world_dim = MAP_TILE_WORLD_DIM
 	tiles := []MapTile {
 		.grass,
 		.grass,
@@ -128,20 +130,15 @@ map_tile_tex_info :: proc(mt: MapTile) -> (tex_idx: u32, tex_base_pos: Pos, tex_
 	return
 }
 
-map_to_drawables :: proc(
-	m: Map,
-	base_world_pos: Pos,
-	tile_world_dim: Dim,
-	drawables_buf: []Drawable,
-) {
+map_to_drawables :: proc(m: Map, drawables_buf: []Drawable) {
 	if len(m.tiles) > len(drawables_buf) {panic("map won't fit in drawables slice")}
 	for tile, idx in m.tiles {
-		x_disp := base_world_pos.x + tile_world_dim.w * cast(f32)(idx % m.width)
-		y_disp := base_world_pos.y + tile_world_dim.h * cast(f32)(idx / m.width)
+		x_disp := m.base_world_pos.x + m.tile_world_dim.w * cast(f32)(idx % m.width)
+		y_disp := m.base_world_pos.y + m.tile_world_dim.h * cast(f32)(idx / m.width)
 		tex_idx, tex_base_pos, tex_dim := map_tile_tex_info(tile)
 		drawable := Drawable {
-			pos          = {base_world_pos.x + x_disp, base_world_pos.y + y_disp},
-			dim          = tile_world_dim,
+			pos          = {m.base_world_pos.x + x_disp, m.base_world_pos.y + y_disp},
+			dim          = m.tile_world_dim,
 			tex_idx      = tex_idx,
 			tex_dim      = tex_dim,
 			tex_base_pos = tex_base_pos,
