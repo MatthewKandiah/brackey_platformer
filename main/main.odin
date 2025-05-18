@@ -108,11 +108,12 @@ main :: proc() {
 		},
 	)
 
-	vid_mode := glfw.GetVideoMode(renderer.monitor)
-	if vid_mode == nil {
-		panic("failed to get monitor video mode")
-	}
-	refresh_rate := cast(f64)vid_mode.refresh_rate
+	// vid_mode := glfw.GetVideoMode(renderer.monitor)
+	// if vid_mode == nil {
+	// 	panic("failed to get monitor video mode")
+	// }
+	// refresh_rate := cast(f64)vid_mode.refresh_rate
+	refresh_rate :: 60
 	NANOSECONDS_PER_FRAME: f64 = 1_000_000_000 / refresh_rate
 
 	camera: Camera = {
