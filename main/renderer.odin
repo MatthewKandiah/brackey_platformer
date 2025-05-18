@@ -92,7 +92,6 @@ Renderer :: struct {
 	descriptor_set_layout:           vk.DescriptorSetLayout,
 	descriptor_pool:                 vk.DescriptorPool,
 	descriptor_sets:                 [MAX_FRAMES_IN_FLIGHT]vk.DescriptorSet,
-	monitor:                         glfw.MonitorHandle,
 }
 
 get_draw_data :: proc(
@@ -366,11 +365,6 @@ init_renderer :: proc() -> (renderer: Renderer) {
 			user_ptr.framebuffer_resized = true
 		}
 		glfw.SetFramebufferSizeCallback(renderer.window, framebuffer_resize_callback)
-
-		renderer.monitor = glfw.GetPrimaryMonitor()
-		if renderer.monitor == nil {
-			panic("failed to get monitor")
-		}
 	}
 
 	{ 	// initialise Vulkan instance
