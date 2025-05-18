@@ -9,13 +9,15 @@ Game :: struct {
 	player:   Player,
 }
 
+MAP_BASE_WORLD_POS :: Pos{0, 0}
+MAP_TILE_WORLD_DIM :: Dim{0.5, 0.5}
 game_to_drawables :: proc(game: Game) -> []Drawable {
 	map_drawable_count := len(game.game_map.tiles)
 	total_drawable_count := map_drawable_count
 	map_to_drawables(
 		game.game_map,
-		{0, 0},
-		{0.5, 0.5},
+		MAP_BASE_WORLD_POS,
+		MAP_TILE_WORLD_DIM,
 		DRAWABLE_BACKING_BUFFER[0:map_drawable_count],
 	)
 	DRAWABLE_BACKING_BUFFER[map_drawable_count] = player_to_drawable(game.player)
@@ -26,7 +28,11 @@ game_to_drawables :: proc(game: Game) -> []Drawable {
 
 Player :: struct {
 	pos: Pos,
-  vel: Vel,
+	vel: Vel,
+}
+
+init_player :: proc() -> Player {
+	return {pos = {0, -0.5}, vel = {0, 0}}
 }
 
 player_to_drawable :: proc(player: Player) -> Drawable {

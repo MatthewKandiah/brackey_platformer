@@ -105,7 +105,7 @@ main :: proc() {
 
 	game := Game {
 		game_map = init_map(),
-		player = Player{pos = {0, 0}, vel = {0, 0}},
+		player   = init_player(),
 	}
 
 	renderer := init_renderer()
@@ -180,6 +180,7 @@ main :: proc() {
 				game.player.pos.x + game.player.vel.x,
 				game.player.pos.y + game.player.vel.y,
 			}
+			camera.pos = game.player.pos
 		}
 
 		{ 	// current game state
