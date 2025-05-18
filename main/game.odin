@@ -26,6 +26,7 @@ game_to_drawables :: proc(game: Game) -> []Drawable {
 
 Player :: struct {
 	pos: Pos,
+  vel: Vel,
 }
 
 player_to_drawable :: proc(player: Player) -> Drawable {
