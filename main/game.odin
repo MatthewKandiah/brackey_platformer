@@ -81,7 +81,7 @@ init_map :: proc() -> (m: Map) {
 	m.base_world_pos = MAP_BASE_WORLD_POS
 	m.tile_world_dim = MAP_TILE_WORLD_DIM
 	tiles := []MapTile {
-		// bottom
+		// top
 		.grass,
 		.grass,
 		.grass,
@@ -111,7 +111,7 @@ init_map :: proc() -> (m: Map) {
 		.dirt,
 		.dirt,
 		.dirt,
-		// top
+		// bottom
 	}
 	m.tiles = make([]MapTile, len(tiles))
 	intrinsics.mem_copy_non_overlapping(
@@ -140,7 +140,7 @@ map_to_drawables :: proc(m: Map, drawables_buf: []Drawable) {
 	if len(m.tiles) > len(drawables_buf) {panic("map won't fit in drawables slice")}
 	for tile, idx in m.tiles {
 		x_disp := m.base_world_pos.x + m.tile_world_dim.w * cast(f32)(idx % m.width)
-		y_disp := m.base_world_pos.y + m.tile_world_dim.h * cast(f32)(idx / m.width)
+		y_disp := m.base_world_pos.y - m.tile_world_dim.h * cast(f32)(idx / m.width)
 		tex_idx, tex_base_pos, tex_dim := map_tile_tex_info(tile)
 		drawable := Drawable {
 			pos          = {m.base_world_pos.x + x_disp, m.base_world_pos.y + y_disp},
