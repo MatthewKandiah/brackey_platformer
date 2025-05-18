@@ -12,18 +12,35 @@ Game :: struct {
 MAP_BASE_WORLD_POS :: Pos{0, 0}
 MAP_TILE_WORLD_DIM :: Dim{0.5, 0.5}
 game_to_drawables :: proc(game: Game) -> []Drawable {
+	total_drawable_count := 0
+
+	DRAWABLE_BACKING_BUFFER[total_drawable_count] = background_to_drawable()
+	total_drawable_count += 1
+
 	map_drawable_count := len(game.game_map.tiles)
-	total_drawable_count := map_drawable_count
 	map_to_drawables(
 		game.game_map,
 		MAP_BASE_WORLD_POS,
 		MAP_TILE_WORLD_DIM,
-		DRAWABLE_BACKING_BUFFER[0:map_drawable_count],
+		DRAWABLE_BACKING_BUFFER[total_drawable_count:total_drawable_count + map_drawable_count],
 	)
-	DRAWABLE_BACKING_BUFFER[map_drawable_count] = player_to_drawable(game.player)
+	total_drawable_count += map_drawable_count
+
+	DRAWABLE_BACKING_BUFFER[total_drawable_count] = player_to_drawable(game.player)
 	total_drawable_count += 1
-	drawables := DRAWABLE_BACKING_BUFFER[0:total_drawable_count]
-	return drawables
+
+	return DRAWABLE_BACKING_BUFFER[0:total_drawable_count]
+}
+
+background_to_drawable :: proc() -> Drawable {
+	tex_idx, tex_base_pos, tex_dim := map_tile_tex_info(.empty)
+	return Drawable {
+		pos = {-10, -100},
+		dim = {500, 500},
+		tex_idx = tex_idx,
+		tex_base_pos = tex_base_pos,
+		tex_dim = tex_dim,
+	}
 }
 
 Player :: struct {
