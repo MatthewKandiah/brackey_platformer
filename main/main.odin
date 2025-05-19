@@ -19,18 +19,55 @@ GlobalContext :: struct {
 
 gc: GlobalContext
 
-quads_overlap :: proc(p1: Pos, d1: Dim, p2: Pos, d2: Dim) -> bool {
-	top1 := p1.y + d1.h
-	top2 := p2.y + d2.h
-	bot1 := p1.y
-	bot2 := p2.y
+OverlapInfo :: struct {
+	top:    bool,
+	bottom: bool,
+	left:   bool,
+	right:  bool,
+}
 
-	left1 := p1.x - d1.w / 2
-	left2 := p2.x - d2.w / 2
-	right1 := p1.x + d1.w / 2
-	right2 := p2.x + d2.w / 2
+any_overlapping :: proc(using o: OverlapInfo) -> bool {
+	return top || bottom || left || right
+}
 
-	return !(bot1 > top2 || bot2 > top1 || right1 < left2 || right2 < left1)
+NON_OVERLAPPING :: OverlapInfo {
+	top    = false,
+	bottom = false,
+	left   = false,
+	right  = false,
+}
+
+ALL_OVERLAPPING :: OverlapInfo {
+	top    = true,
+	bottom = true,
+	left   = true,
+	right  = true,
+}
+
+player_overlaps_quad :: proc(
+	player_p: Pos,
+	player_d: Dim,
+	quad_p: Pos,
+	quad_d: Dim,
+) -> OverlapInfo {
+	top1 := player_p.y + player_d.h
+	top2 := quad_p.y + quad_d.h
+	bot1 := player_p.y
+	bot2 := quad_p.y
+
+	left1 := player_p.x - player_d.w / 2
+	left2 := quad_p.x - quad_d.w / 2
+	right1 := player_p.x + player_d.w / 2
+	right2 := quad_p.x + quad_d.w / 2
+
+	if bot1 > top2 || bot2 > top1 || right1 < left2 || right2 < left1 {return NON_OVERLAPPING}
+
+	overlap_info: OverlapInfo = ALL_OVERLAPPING
+	// if left set left = true
+	// if right set right = true
+	// if up set up = true
+	// if down set down = true
+	return overlap_info
 }
 
 main :: proc() {
@@ -118,11 +155,13 @@ main :: proc() {
 			for map_tile, i in game.game_map.tiles {
 				if map_tile == .empty {continue}
 				map_tile_world_pos := map_tile_pos(game.game_map, i)
-				if quads_overlap(
-					next_pos,
-					game.player.collision_dim,
-					map_tile_world_pos,
-					game.game_map.tile_world_dim,
+				if any_overlapping(
+					player_overlaps_quad(
+						next_pos,
+						game.player.collision_dim,
+						map_tile_world_pos,
+						game.game_map.tile_world_dim,
+					),
 				) {
 					next_pos = game.player.pos
 					game.player.vel.y = 0
