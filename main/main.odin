@@ -50,23 +50,26 @@ player_overlaps_quad :: proc(
 	quad_p: Pos,
 	quad_d: Dim,
 ) -> OverlapInfo {
-	top1 := player_p.y + player_d.h
-	top2 := quad_p.y + quad_d.h
-	bot1 := player_p.y
-	bot2 := quad_p.y
+	player_top := player_p.y + player_d.h
+	quad_top := quad_p.y + quad_d.h
+	player_bot := player_p.y
+	quad_bot := quad_p.y
 
-	left1 := player_p.x - player_d.w / 2
-	left2 := quad_p.x - quad_d.w / 2
-	right1 := player_p.x + player_d.w / 2
-	right2 := quad_p.x + quad_d.w / 2
+	player_left := player_p.x - player_d.w / 2
+	quad_left := quad_p.x - quad_d.w / 2
+	player_right := player_p.x + player_d.w / 2
+	quad_right := quad_p.x + quad_d.w / 2
 
-	if bot1 > top2 || bot2 > top1 || right1 < left2 || right2 < left1 {return NON_OVERLAPPING}
+	if player_bot > quad_top ||
+	   quad_bot > player_top ||
+	   player_right < quad_left ||
+	   quad_right < player_left {return NON_OVERLAPPING}
 
-	overlap_info: OverlapInfo = ALL_OVERLAPPING
-	// if left set left = true
-	// if right set right = true
-	// if up set up = true
-	// if down set down = true
+	overlap_info: OverlapInfo = NON_OVERLAPPING
+	if player_left > quad_left {overlap_info.left = true}
+	if player_right < quad_right {overlap_info.right = true}
+	if player_top < quad_top {overlap_info.top = true}
+	if player_bot > quad_bot {overlap_info.bottom = true}
 	return overlap_info
 }
 
@@ -155,14 +158,15 @@ main :: proc() {
 			for map_tile, i in game.game_map.tiles {
 				if map_tile == .empty {continue}
 				map_tile_world_pos := map_tile_pos(game.game_map, i)
-				if any_overlapping(
-					player_overlaps_quad(
-						next_pos,
-						game.player.collision_dim,
-						map_tile_world_pos,
-						game.game_map.tile_world_dim,
-					),
-				) {
+				overlap_info := player_overlaps_quad(
+					next_pos,
+					game.player.collision_dim,
+					map_tile_world_pos,
+					game.game_map.tile_world_dim,
+				)
+				// TODO-Matt: use directional collision info to update a can_jump state and player vertical velocity
+				if any_overlapping(overlap_info) {
+					fmt.println("overlap found", overlap_info)
 					next_pos = game.player.pos
 					game.player.vel.y = 0
 					break
