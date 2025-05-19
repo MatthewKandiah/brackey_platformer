@@ -10,6 +10,7 @@ Game :: struct {
 	player:   Player,
 }
 
+FALLING_SPEED :: 0.04
 MAP_BASE_WORLD_POS :: Pos{0, 0}
 MAP_TILE_WORLD_DIM :: Dim{0.5, 0.5}
 game_to_drawables :: proc(game: Game) -> []Drawable {
@@ -49,7 +50,7 @@ Player :: struct {
 }
 
 init_player :: proc() -> Player {
-	return {pos = {0, 1}, vel = {0, -0.01}, collision_dim = {0.3, 0.6}}
+	return {pos = {0, 1}, vel = {0, -FALLING_SPEED}, collision_dim = {0.3, 0.6}}
 }
 
 player_to_drawable :: proc(player: Player) -> Drawable {
