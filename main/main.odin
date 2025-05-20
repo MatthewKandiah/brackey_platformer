@@ -65,9 +65,9 @@ main :: proc() {
 				}
 				if ke.key == .up {
 					if ke.action == .pressed {
-						if game.player.can_jump {
+						if game.player.is_grounded {
 							game.player.vel.y = JUMP_SPEED
-              game.player.can_jump = false
+							game.player.is_grounded = false
 						}
 					}
 				}
@@ -118,9 +118,10 @@ main :: proc() {
 				if overlap_info.bot {
 					next_pos.y = game.player.pos.y
 					game.player.vel.y = max(0, game.player.vel.y)
-          game.player.can_jump = true
+					game.player.is_grounded = true
 				}
 			}
+			if next_pos.y != game.player.pos.y {game.player.is_grounded = false}
 			game.player.pos = next_pos
 			camera.pos = game.player.pos
 			game.player.vel.y -= FALLING_ACCEL

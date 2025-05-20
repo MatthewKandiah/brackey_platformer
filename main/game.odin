@@ -49,11 +49,16 @@ Player :: struct {
 	pos:           Pos,
 	vel:           Vel,
 	collision_dim: Dim,
-	can_jump:      bool,
+	is_grounded:   bool,
 }
 
 init_player :: proc() -> Player {
-	return {pos = {0, 1}, vel = {0, -FALLING_SPEED}, collision_dim = {0.3, 0.6}, can_jump = false}
+	return {
+		pos = {0, 1},
+		vel = {0, -FALLING_SPEED},
+		collision_dim = {0.3, 0.6},
+		is_grounded = false,
+	}
 }
 
 player_to_drawable :: proc(player: Player) -> Drawable {
