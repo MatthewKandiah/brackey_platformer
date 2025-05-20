@@ -164,12 +164,21 @@ main :: proc() {
 					map_tile_world_pos,
 					game.game_map.tile_world_dim,
 				)
-				// TODO-Matt: use directional collision info to update a can_jump state and player vertical velocity
-				if any_overlapping(overlap_info) {
-					fmt.println("overlap found", overlap_info)
-					next_pos = game.player.pos
-					game.player.vel.y = 0
-					break
+				if overlap_info.left {
+					next_pos.x = game.player.pos.x
+					game.player.vel.x = max(0, game.player.vel.x)
+				}
+				if overlap_info.right {
+					next_pos.x = game.player.pos.x
+					game.player.vel.x = min(0, game.player.vel.x)
+				}
+				if overlap_info.top {
+					next_pos.y = game.player.pos.y
+					game.player.vel.y = min(0, game.player.vel.y)
+				}
+				if overlap_info.bottom {
+					next_pos.y = game.player.pos.y
+					game.player.vel.y = max(0, game.player.vel.y)
 				}
 			}
 			game.player.pos = next_pos
