@@ -86,7 +86,7 @@ main :: proc() {
 				}
 				if ke.key == .esc {
 					if ke.action == .pressed {
-						gc.running = false
+						game.player = init_player()
 					}
 				}
 			}
