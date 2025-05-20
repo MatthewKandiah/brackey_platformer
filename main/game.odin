@@ -10,6 +10,7 @@ Game :: struct {
 	player:   Player,
 }
 
+JUMP_SPEED :: 0.05
 FALLING_SPEED :: 0.04
 FALLING_ACCEL :: 0.0025
 MAP_BASE_WORLD_POS :: Pos{0, 0}
@@ -48,10 +49,11 @@ Player :: struct {
 	pos:           Pos,
 	vel:           Vel,
 	collision_dim: Dim,
+	can_jump:      bool,
 }
 
 init_player :: proc() -> Player {
-	return {pos = {0, 1}, vel = {0, -FALLING_SPEED}, collision_dim = {0.3, 0.6}}
+	return {pos = {0, 1}, vel = {0, -FALLING_SPEED}, collision_dim = {0.3, 0.6}, can_jump = false}
 }
 
 player_to_drawable :: proc(player: Player) -> Drawable {
@@ -244,10 +246,10 @@ handle_key_press :: proc "c" (
 }
 
 OverlapInfo :: struct {
-	top:    bool,
-	bot: bool,
-	left:   bool,
-	right:  bool,
+	top:   bool,
+	bot:   bool,
+	left:  bool,
+	right: bool,
 }
 
 any_overlapping :: proc(using o: OverlapInfo) -> bool {
@@ -255,17 +257,17 @@ any_overlapping :: proc(using o: OverlapInfo) -> bool {
 }
 
 NON_OVERLAPPING :: OverlapInfo {
-	top    = false,
-	bot = false,
-	left   = false,
-	right  = false,
+	top   = false,
+	bot   = false,
+	left  = false,
+	right = false,
 }
 
 ALL_OVERLAPPING :: OverlapInfo {
-	top    = true,
-	bot = true,
-	left   = true,
-	right  = true,
+	top   = true,
+	bot   = true,
+	left  = true,
+	right = true,
 }
 
 horizontal_line_overlaps_quad :: proc(left, right, y: f32, quad_p: Pos, quad_d: Dim) -> bool {
@@ -342,4 +344,3 @@ player_overlaps_quad :: proc(
 	)
 	return overlap_info
 }
-

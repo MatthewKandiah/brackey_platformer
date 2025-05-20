@@ -65,7 +65,10 @@ main :: proc() {
 				}
 				if ke.key == .up {
 					if ke.action == .pressed {
-						game.player.vel.y = speed
+						if game.player.can_jump {
+							game.player.vel.y = JUMP_SPEED
+              game.player.can_jump = false
+						}
 					}
 				}
 				if ke.key == .down {
@@ -115,6 +118,7 @@ main :: proc() {
 				if overlap_info.bot {
 					next_pos.y = game.player.pos.y
 					game.player.vel.y = max(0, game.player.vel.y)
+          game.player.can_jump = true
 				}
 			}
 			game.player.pos = next_pos
