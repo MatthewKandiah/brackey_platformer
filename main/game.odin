@@ -11,6 +11,7 @@ Game :: struct {
 }
 
 FALLING_SPEED :: 0.04
+FALLING_ACCEL :: 0.0025
 MAP_BASE_WORLD_POS :: Pos{0, 0}
 MAP_TILE_WORLD_DIM :: Dim{0.5, 0.5}
 game_to_drawables :: proc(game: Game) -> []Drawable {

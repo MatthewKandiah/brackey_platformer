@@ -121,17 +121,9 @@ main :: proc() {
 					if ke.action == .pressed {
 						game.player.vel.y = speed
 					}
-					if ke.action == .released {
-						game.player.vel.y = 0
-					}
 				}
 				if ke.key == .down {
-					if ke.action == .pressed {
-						game.player.vel.y = -speed
-					}
-					if ke.action == .released {
-						game.player.vel.y = 0
-					}
+					// noop
 				}
 				if ke.key == .p {
 					if ke.action == .pressed {
@@ -155,6 +147,13 @@ main :: proc() {
 				game.player.pos.x + game.player.vel.x,
 				game.player.pos.y + game.player.vel.y,
 			}
+			// TODO - rethink collision detection
+			/*
+        when the bottom of the quad is colliding with the ground, typically the left and/or right of the quad is also colliding with the ground, so you get stuck and can't move horizontally
+        we could consider cutting the corners off the player collision box, and making a "collision octogon"
+        you collide with a block if any of the lines through adjacent vertices on the octagon overlaps the block? guess that has the same problem again unless we don't check all the way to the end of each segment
+        maybe we don't care about the corners? You'll overlap the block very slightly, but then it will collide with a horizontal/vertical edge and you'll stop anyway?
+      */
 			for map_tile, i in game.game_map.tiles {
 				if map_tile == .empty {continue}
 				map_tile_world_pos := map_tile_pos(game.game_map, i)
@@ -166,11 +165,9 @@ main :: proc() {
 				)
 				if overlap_info.left {
 					next_pos.x = game.player.pos.x
-					game.player.vel.x = max(0, game.player.vel.x)
 				}
 				if overlap_info.right {
 					next_pos.x = game.player.pos.x
-					game.player.vel.x = min(0, game.player.vel.x)
 				}
 				if overlap_info.top {
 					next_pos.y = game.player.pos.y
@@ -183,6 +180,7 @@ main :: proc() {
 			}
 			game.player.pos = next_pos
 			camera.pos = game.player.pos
+			game.player.vel.y -= FALLING_ACCEL
 		}
 
 		{ 	// draw current game state
