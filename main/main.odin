@@ -21,27 +21,45 @@ gc: GlobalContext
 
 OverlapInfo :: struct {
 	top:    bool,
-	bottom: bool,
+	bot: bool,
 	left:   bool,
 	right:  bool,
 }
 
 any_overlapping :: proc(using o: OverlapInfo) -> bool {
-	return top || bottom || left || right
+	return top || bot || left || right
 }
 
 NON_OVERLAPPING :: OverlapInfo {
 	top    = false,
-	bottom = false,
+	bot = false,
 	left   = false,
 	right  = false,
 }
 
 ALL_OVERLAPPING :: OverlapInfo {
 	top    = true,
-	bottom = true,
+	bot = true,
 	left   = true,
 	right  = true,
+}
+
+horizontal_line_overlaps_quad :: proc(left, right, y: f32, quad_p: Pos, quad_d: Dim) -> bool {
+	if left >= right {panic("left must be less than right")}
+	quad_top := quad_p.y + quad_d.h
+	quad_bot := quad_p.y
+	quad_left := quad_p.x - quad_d.w / 2
+	quad_right := quad_p.x + quad_d.w / 2
+	return !(y > quad_top || y < quad_bot || right < quad_left || left > quad_right)
+}
+
+vertical_line_overlaps_quad :: proc(bot, top, x: f32, quad_p: Pos, quad_d: Dim) -> bool {
+	if bot >= top {panic("bot must be less than top")}
+	quad_top := quad_p.y + quad_d.h
+	quad_bot := quad_p.y
+	quad_left := quad_p.x - quad_d.w / 2
+	quad_right := quad_p.x + quad_d.w / 2
+	return !(x < quad_left || x > quad_right || bot > quad_top || top < quad_bot)
 }
 
 player_overlaps_quad :: proc(
@@ -51,13 +69,13 @@ player_overlaps_quad :: proc(
 	quad_d: Dim,
 ) -> OverlapInfo {
 	player_top := player_p.y + player_d.h
-	quad_top := quad_p.y + quad_d.h
 	player_bot := player_p.y
-	quad_bot := quad_p.y
-
 	player_left := player_p.x - player_d.w / 2
-	quad_left := quad_p.x - quad_d.w / 2
 	player_right := player_p.x + player_d.w / 2
+
+	quad_top := quad_p.y + quad_d.h
+	quad_bot := quad_p.y
+	quad_left := quad_p.x - quad_d.w / 2
 	quad_right := quad_p.x + quad_d.w / 2
 
 	if player_bot > quad_top ||
@@ -66,10 +84,38 @@ player_overlaps_quad :: proc(
 	   quad_right < player_left {return NON_OVERLAPPING}
 
 	overlap_info: OverlapInfo = NON_OVERLAPPING
-	if player_left > quad_left {overlap_info.left = true}
-	if player_right < quad_right {overlap_info.right = true}
-	if player_top < quad_top {overlap_info.top = true}
-	if player_bot > quad_bot {overlap_info.bottom = true}
+	corner_allowance_x := (player_right - player_left) / 20
+	if corner_allowance_x <= 0 {panic("Unexpected player x-dimensions")}
+	corner_allowance_y := (player_top - player_bot) / 20
+	if corner_allowance_y <= 0 {panic("Unexpected player y-dimensions")}
+	overlap_info.bot = horizontal_line_overlaps_quad(
+		player_left + corner_allowance_x,
+		player_right - corner_allowance_x,
+		player_bot,
+		quad_p,
+		quad_d,
+	)
+	overlap_info.top = horizontal_line_overlaps_quad(
+		player_left + corner_allowance_x,
+		player_right - corner_allowance_x,
+		player_top,
+		quad_p,
+		quad_d,
+	)
+	overlap_info.left = vertical_line_overlaps_quad(
+		player_bot + corner_allowance_y,
+		player_top - corner_allowance_y,
+		player_left,
+		quad_p,
+		quad_d,
+	)
+	overlap_info.right = vertical_line_overlaps_quad(
+		player_bot + corner_allowance_y,
+		player_top - corner_allowance_y,
+		player_right,
+		quad_p,
+		quad_d,
+	)
 	return overlap_info
 }
 
@@ -147,13 +193,6 @@ main :: proc() {
 				game.player.pos.x + game.player.vel.x,
 				game.player.pos.y + game.player.vel.y,
 			}
-			// TODO - rethink collision detection
-			/*
-        when the bottom of the quad is colliding with the ground, typically the left and/or right of the quad is also colliding with the ground, so you get stuck and can't move horizontally
-        we could consider cutting the corners off the player collision box, and making a "collision octogon"
-        you collide with a block if any of the lines through adjacent vertices on the octagon overlaps the block? guess that has the same problem again unless we don't check all the way to the end of each segment
-        maybe we don't care about the corners? You'll overlap the block very slightly, but then it will collide with a horizontal/vertical edge and you'll stop anyway?
-      */
 			for map_tile, i in game.game_map.tiles {
 				if map_tile == .empty {continue}
 				map_tile_world_pos := map_tile_pos(game.game_map, i)
@@ -173,7 +212,7 @@ main :: proc() {
 					next_pos.y = game.player.pos.y
 					game.player.vel.y = min(0, game.player.vel.y)
 				}
-				if overlap_info.bottom {
+				if overlap_info.bot {
 					next_pos.y = game.player.pos.y
 					game.player.vel.y = max(0, game.player.vel.y)
 				}
