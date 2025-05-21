@@ -80,6 +80,16 @@ main :: proc() {
 				}
 				if ke.key == .down {
 					// noop
+					if ke.action == .pressed {
+						game.player.animation = player_run
+						game.player.animation_frame = 0
+						game.player.animation_frame_held = 0
+					}
+					if ke.action == .released {
+						game.player.animation = player_idle
+						game.player.animation_frame = 0
+						game.player.animation_frame_held = 0
+					}
 				}
 				if ke.key == .p {
 					if ke.action == .pressed {
