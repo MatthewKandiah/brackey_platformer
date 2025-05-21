@@ -315,9 +315,9 @@ player_overlaps_quad :: proc(
 	   quad_right < player_left {return NON_OVERLAPPING}
 
 	overlap_info: OverlapInfo = NON_OVERLAPPING
-	corner_allowance_x := (player_right - player_left) / 20
+	corner_allowance_x := (player_right - player_left) / 10
 	if corner_allowance_x <= 0 {panic("Unexpected player x-dimensions")}
-	corner_allowance_y := (player_top - player_bot) / 20
+	corner_allowance_y := (player_top - player_bot) / 10
 	if corner_allowance_y <= 0 {panic("Unexpected player y-dimensions")}
 	overlap_info.bot = horizontal_line_overlaps_quad(
 		player_left + corner_allowance_x,
