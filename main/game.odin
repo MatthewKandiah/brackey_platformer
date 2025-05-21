@@ -46,10 +46,13 @@ background_to_drawable :: proc() -> Drawable {
 }
 
 Player :: struct {
-	pos:           Pos,
-	vel:           Vel,
-	collision_dim: Dim,
-	is_grounded:   bool,
+	pos:                  Pos,
+	vel:                  Vel,
+	collision_dim:        Dim,
+	is_grounded:          bool,
+	animation:            Animation,
+	animation_frame:      int,
+	animation_frame_held: int,
 }
 
 init_player :: proc() -> Player {
@@ -58,18 +61,20 @@ init_player :: proc() -> Player {
 		vel = {0, -FALLING_SPEED},
 		collision_dim = {0.3, 0.6},
 		is_grounded = false,
+		animation = player_idle,
+		animation_frame = 0,
+		animation_frame_held = 0,
 	}
 }
 
 player_to_drawable :: proc(player: Player) -> Drawable {
-	original_tile_size: f32 : 32
 	bottom_margin: f32 : 4
 	return Drawable {
 		pos = player.pos,
 		dim = {1, 1},
-		tex_idx = 0,
-		tex_base_pos = {0, 0},
-		tex_dim = {original_tile_size, original_tile_size - bottom_margin},
+		tex_idx = player.animation.tex_idx,
+		tex_base_pos = player.animation.tex_base_pos_list[player.animation_frame],
+		tex_dim = player.animation.tex_dim,
 	}
 }
 

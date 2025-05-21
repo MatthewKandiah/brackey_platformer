@@ -44,6 +44,13 @@ main :: proc() {
 		glfw.PollEvents()
 
 		{ 	// update game state
+			game.player.animation_frame_held += 1
+			if game.player.animation_frame_held >= game.player.animation.duration_frames {
+				game.player.animation_frame_held = 0
+				game.player.animation_frame += 1
+				game.player.animation_frame %= len(game.player.animation.tex_base_pos_list)
+			}
+
 			speed :: 0.04
 			for i in 0 ..< gc.key_events_count {
 				ke := KEY_EVENT_BACKING_BUFFER[i]
