@@ -93,15 +93,15 @@ init_map :: proc() -> (m: Map) {
 	tiles := []MapTile {
 		// top
 		.grass,
-		.grass,
-		.grass,
-		.grass,
+		.empty,
+		.empty,
+		.empty,
 		.grass,
 		//
 		.dirt,
 		.dirt,
-		.dirt,
-		.dirt,
+		.empty,
+		.empty,
 		.dirt,
 		//
 		.grass,
@@ -315,7 +315,7 @@ player_overlaps_quad :: proc(
 	   quad_right < player_left {return NON_OVERLAPPING}
 
 	overlap_info: OverlapInfo = NON_OVERLAPPING
-	corner_allowance_x := (player_right - player_left) / 10
+	corner_allowance_x := (player_right - player_left) / 3
 	if corner_allowance_x <= 0 {panic("Unexpected player x-dimensions")}
 	corner_allowance_y := (player_top - player_bot) / 10
 	if corner_allowance_y <= 0 {panic("Unexpected player y-dimensions")}
