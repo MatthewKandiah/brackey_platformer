@@ -49,18 +49,18 @@ main :: proc() {
 				ke := KEY_EVENT_BACKING_BUFFER[i]
 				if ke.key == .left {
 					if ke.action == .pressed {
-						game.player.vel.x = -speed
+						game.player.vel.x -= speed
 					}
 					if ke.action == .released {
-						game.player.vel.x = 0
+						game.player.vel.x += speed
 					}
 				}
 				if ke.key == .right {
 					if ke.action == .pressed {
-						game.player.vel.x = speed
+						game.player.vel.x += speed
 					}
 					if ke.action == .released {
-						game.player.vel.x = 0
+						game.player.vel.x -= speed
 					}
 				}
 				if ke.key == .up {

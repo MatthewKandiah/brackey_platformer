@@ -1,5 +1,4 @@
 # TODO
-- the left/right controls are far too janky at the moment. If you quickly alternate between left and right, you'll press left, then press right, then release one of them and find yourself stationary even though you are holding an arrow down
 - collectible coins that vanish when you collide with them
 - player idle and walking animations
 - die when you fall too far
