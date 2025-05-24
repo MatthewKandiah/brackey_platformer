@@ -63,28 +63,30 @@ main :: proc() {
 				if ke.key == .left {
 					if ke.action == .pressed {
 						game.player.vel.x -= speed
+						game.player.is_facing_left = true
 						gc.keys_held.left = true
-            set_new_animation(&game, player_run)
+						set_new_animation(&game, player_run)
 					}
 					if ke.action == .released {
 						game.player.vel.x += speed
 						gc.keys_held.left = false
 						if !any(gc.keys_held) {
-              set_new_animation(&game, player_idle)
+							set_new_animation(&game, player_idle)
 						}
 					}
 				}
 				if ke.key == .right {
 					if ke.action == .pressed {
 						game.player.vel.x += speed
+						game.player.is_facing_left = false
 						gc.keys_held.right = true
-            set_new_animation(&game, player_run)
+						set_new_animation(&game, player_run)
 					}
 					if ke.action == .released {
 						game.player.vel.x -= speed
 						gc.keys_held.right = false
 						if !any(gc.keys_held) {
-              set_new_animation(&game, player_idle)
+							set_new_animation(&game, player_idle)
 						}
 					}
 				}
@@ -159,6 +161,7 @@ main :: proc() {
 				drawables,
 				camera,
 				cast(f32)renderer.surface_extent.width / cast(f32)renderer.surface_extent.height,
+				game.player.is_facing_left,
 			)
 		}
 

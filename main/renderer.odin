@@ -180,8 +180,15 @@ draw_frame :: proc(
 	drawables: []Drawable,
 	camera: Camera,
 	screen_height_over_width: f32,
+	flip_player: bool,
 ) {
-	vertices, indices := get_draw_data(camera, screen_height_over_width, drawables, {})
+	player_idx := len(drawables) - 1
+	vertices, indices := get_draw_data(
+		camera,
+		screen_height_over_width,
+		drawables,
+		{player_idx} if flip_player else {},
+	)
 	if len(vertices) >
 	   VERTEX_BUFFER_SIZE {panic("ASSERT: vertex data for draw call will not fit in vertex buffer")}
 	if len(indices) >

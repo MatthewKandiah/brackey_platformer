@@ -28,6 +28,9 @@ game_to_drawables :: proc(game: Game) -> []Drawable {
 	)
 	total_drawable_count += map_drawable_count
 
+	/*
+    left-right flipping logic assumes the player will be the last drawable drawn each frame
+  */
 	DRAWABLE_BACKING_BUFFER[total_drawable_count] = player_to_drawable(game.player)
 	total_drawable_count += 1
 
@@ -53,6 +56,7 @@ Player :: struct {
 	animation:            Animation,
 	animation_frame:      int,
 	animation_frame_held: int,
+	is_facing_left:       bool,
 }
 
 init_player :: proc() -> Player {
@@ -64,6 +68,7 @@ init_player :: proc() -> Player {
 		animation = player_idle,
 		animation_frame = 0,
 		animation_frame_held = 0,
+		is_facing_left = false,
 	}
 }
 
