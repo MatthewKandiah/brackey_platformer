@@ -98,6 +98,7 @@ get_draw_data :: proc(
 	camera: Camera,
 	screen_height_over_width: f32,
 	drawables: []Drawable,
+	flip_horizontal_indices: []int,
 ) -> (
 	vertices: []Vertex,
 	indices: []u32,
@@ -117,27 +118,37 @@ get_draw_data :: proc(
 			drawable.dim.w * width_world_to_screen_factor,
 			drawable.dim.h * height_world_to_screen_factor,
 		}
+
+		tex_x_left := drawable.tex_base_pos.x
+		tex_x_right := drawable.tex_base_pos.x + drawable.tex_dim.w
+		tex_y_top := drawable.tex_base_pos.y
+		tex_y_bot := drawable.tex_base_pos.y + drawable.tex_dim.h
+		uv0 := Pos{drawable.tex_base_pos.x, drawable.tex_base_pos.y}
+		uv1 := Pos{drawable.tex_base_pos.x + drawable.tex_dim.w, drawable.tex_base_pos.y}
+		uv2 := Pos {
+			drawable.tex_base_pos.x + drawable.tex_dim.w,
+			drawable.tex_base_pos.y + drawable.tex_dim.h,
+		}
+		uv3 := Pos{drawable.tex_base_pos.x, drawable.tex_base_pos.y + drawable.tex_dim.h}
+		flipped_horizontally := contains(int, flip_horizontal_indices, i)
 		VERTEX_BACKING_BUFFER[4 * i + 0] = {
 			{scaled_pos.x - scaled_dim.w / 2, scaled_pos.y - scaled_dim.h},
-			{drawable.tex_base_pos.x, drawable.tex_base_pos.y},
+			{tex_x_right if flipped_horizontally else tex_x_left, tex_y_top},
 			drawable.tex_idx,
 		}
 		VERTEX_BACKING_BUFFER[4 * i + 1] = {
 			{scaled_pos.x + scaled_dim.w / 2, scaled_pos.y - scaled_dim.h},
-			{drawable.tex_base_pos.x + drawable.tex_dim.w, drawable.tex_base_pos.y},
+			{tex_x_left if flipped_horizontally else tex_x_right, tex_y_top},
 			drawable.tex_idx,
 		}
 		VERTEX_BACKING_BUFFER[4 * i + 2] = {
 			{scaled_pos.x + scaled_dim.w / 2, scaled_pos.y},
-			{
-				drawable.tex_base_pos.x + drawable.tex_dim.w,
-				drawable.tex_base_pos.y + drawable.tex_dim.h,
-			},
+			{tex_x_left if flipped_horizontally else tex_x_right, tex_y_bot},
 			drawable.tex_idx,
 		}
 		VERTEX_BACKING_BUFFER[4 * i + 3] = {
 			{scaled_pos.x - scaled_dim.w / 2, scaled_pos.y},
-			{drawable.tex_base_pos.x, drawable.tex_base_pos.y + drawable.tex_dim.h},
+			{tex_x_right if flipped_horizontally else tex_x_left, tex_y_bot},
 			drawable.tex_idx,
 		}
 
@@ -170,7 +181,7 @@ draw_frame :: proc(
 	camera: Camera,
 	screen_height_over_width: f32,
 ) {
-	vertices, indices := get_draw_data(camera, screen_height_over_width, drawables)
+	vertices, indices := get_draw_data(camera, screen_height_over_width, drawables, {})
 	if len(vertices) >
 	   VERTEX_BUFFER_SIZE {panic("ASSERT: vertex data for draw call will not fit in vertex buffer")}
 	if len(indices) >
