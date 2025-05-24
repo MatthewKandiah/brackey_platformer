@@ -14,8 +14,16 @@ GlobalContext :: struct {
 	framebuffer_resized: bool,
 	vk_instance:         vk.Instance,
 	key_events_count:    int,
+	keys_held:           KeysPressed,
 	running:             bool,
 }
+
+KeysPressed :: struct {
+	left:  bool,
+	right: bool,
+}
+
+any :: proc(using kp: KeysPressed) -> bool {return left || right}
 
 gc: GlobalContext
 
@@ -57,17 +65,37 @@ main :: proc() {
 				if ke.key == .left {
 					if ke.action == .pressed {
 						game.player.vel.x -= speed
+						gc.keys_held.left = true
+						game.player.animation_frame_held = 0
+						game.player.animation_frame = 0
+						game.player.animation = player_run
 					}
 					if ke.action == .released {
 						game.player.vel.x += speed
+						gc.keys_held.left = false
+						if !any(gc.keys_held) {
+							game.player.animation_frame_held = 0
+							game.player.animation_frame = 0
+							game.player.animation = player_idle
+						}
 					}
 				}
 				if ke.key == .right {
 					if ke.action == .pressed {
 						game.player.vel.x += speed
+						gc.keys_held.right = true
+						game.player.animation_frame_held = 0
+						game.player.animation_frame = 0
+						game.player.animation = player_run
 					}
 					if ke.action == .released {
 						game.player.vel.x -= speed
+						gc.keys_held.right = false
+						if !any(gc.keys_held) {
+							game.player.animation_frame_held = 0
+							game.player.animation_frame = 0
+							game.player.animation = player_idle
+						}
 					}
 				}
 				if ke.key == .up {
@@ -80,16 +108,6 @@ main :: proc() {
 				}
 				if ke.key == .down {
 					// noop
-					if ke.action == .pressed {
-						game.player.animation = player_run
-						game.player.animation_frame = 0
-						game.player.animation_frame_held = 0
-					}
-					if ke.action == .released {
-						game.player.animation = player_idle
-						game.player.animation_frame = 0
-						game.player.animation_frame_held = 0
-					}
 				}
 				if ke.key == .p {
 					if ke.action == .pressed {
