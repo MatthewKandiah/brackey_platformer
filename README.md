@@ -1,5 +1,4 @@
 # TODO
-- player idle and walking animations
 - die when you fall too far
 - sounds - beep on jump, on coin collected, on death
 - more interesting map to jump around
