@@ -54,9 +54,7 @@ main :: proc() {
 		{ 	// update game state
 			game.player.animation_frame_held += 1
 			if game.player.animation_frame_held >= game.player.animation.duration_frames {
-				game.player.animation_frame_held = 0
-				game.player.animation_frame += 1
-				game.player.animation_frame %= len(game.player.animation.tex_base_pos_list)
+				advance_animation_frame(&game)
 			}
 
 			speed :: 0.04
@@ -66,17 +64,13 @@ main :: proc() {
 					if ke.action == .pressed {
 						game.player.vel.x -= speed
 						gc.keys_held.left = true
-						game.player.animation_frame_held = 0
-						game.player.animation_frame = 0
-						game.player.animation = player_run
+            set_new_animation(&game, player_run)
 					}
 					if ke.action == .released {
 						game.player.vel.x += speed
 						gc.keys_held.left = false
 						if !any(gc.keys_held) {
-							game.player.animation_frame_held = 0
-							game.player.animation_frame = 0
-							game.player.animation = player_idle
+              set_new_animation(&game, player_idle)
 						}
 					}
 				}
@@ -84,17 +78,13 @@ main :: proc() {
 					if ke.action == .pressed {
 						game.player.vel.x += speed
 						gc.keys_held.right = true
-						game.player.animation_frame_held = 0
-						game.player.animation_frame = 0
-						game.player.animation = player_run
+            set_new_animation(&game, player_run)
 					}
 					if ke.action == .released {
 						game.player.vel.x -= speed
 						gc.keys_held.right = false
 						if !any(gc.keys_held) {
-							game.player.animation_frame_held = 0
-							game.player.animation_frame = 0
-							game.player.animation = player_idle
+              set_new_animation(&game, player_idle)
 						}
 					}
 				}

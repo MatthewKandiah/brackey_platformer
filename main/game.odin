@@ -354,3 +354,15 @@ player_overlaps_quad :: proc(
 	)
 	return overlap_info
 }
+
+advance_animation_frame :: proc(game: ^Game) {
+	game.player.animation_frame_held = 0
+	game.player.animation_frame += 1
+	game.player.animation_frame %= len(game.player.animation.tex_base_pos_list)
+}
+
+set_new_animation :: proc(game: ^Game, new_anim: Animation) {
+	game.player.animation_frame_held = 0
+	game.player.animation_frame = 0
+	game.player.animation = new_anim
+}
