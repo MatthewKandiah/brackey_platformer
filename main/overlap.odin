@@ -25,6 +25,43 @@ ALL_OVERLAPPING :: OverlapInfo {
 	right = true,
 }
 
+Line :: struct {
+	start: Pos,
+	end:   Pos,
+}
+
+lines_intersect :: proc(a: Line, b: Line) -> bool {
+	// conditions derived using https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
+	// formula for "Given two points on each line segment"
+	// lines are not parallel or colinear => denominators non-zero
+	// intersection lies on line segment => t <= 1 and u <= 1
+	//                                   => signs of numerators != signs of denominators
+	x1 := a.start.x
+	x2 := a.end.x
+	x3 := b.start.x
+	x4 := b.end.x
+	y1 := a.start.y
+	y2 := a.end.y
+	y3 := b.start.y
+	y4 := b.end.y
+
+	t_num := (x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)
+	u_num := (y1 - y2) * (x1 - x3) - (x1 - x2) * (y1 - y3)
+	den := (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+
+  single_intersection_exists := den == 0
+  if !single_intersection_exists {return colinear_lines_intersect(a, b)}
+
+  // Note - can conclude if 0 <= t <= 1 and 0 <= u <= 1 without divisions to improve performance
+  t := t_num / den
+  u := u_num / den
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1
+}
+
+colinear_lines_intersect :: proc(a: Line, b: Line) -> bool {
+  TODO()
+}
+
 horizontal_line_overlaps_quad :: proc(left, right, y: f32, quad_p: Pos, quad_d: Dim) -> bool {
 	if left >= right {panic("left must be less than right")}
 	quad_top := quad_p.y + quad_d.h
@@ -99,4 +136,3 @@ player_overlaps_quad :: proc(
 	)
 	return overlap_info
 }
-
