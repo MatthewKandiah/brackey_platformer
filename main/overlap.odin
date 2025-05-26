@@ -49,35 +49,65 @@ lines_intersect :: proc(a: Line, b: Line) -> bool {
 	u_num := (y1 - y2) * (x1 - x3) - (x1 - x2) * (y1 - y3)
 	den := (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
 
-  single_intersection_exists := den == 0
-  if !single_intersection_exists {return colinear_lines_intersect(a, b)}
+	single_intersection_exists := den == 0
+	if !single_intersection_exists {return parallel_lines_intersect(a, b)}
 
-  // Note - can conclude if 0 <= t <= 1 and 0 <= u <= 1 without divisions to improve performance
-  t := t_num / den
-  u := u_num / den
-  return t >= 0 && t <= 1 && u >= 0 && u <= 1
+	// Note - can conclude if 0 <= t <= 1 and 0 <= u <= 1 without divisions to improve performance
+	t := t_num / den
+	u := u_num / den
+	return t >= 0 && t <= 1 && u >= 0 && u <= 1
 }
 
-colinear_lines_intersect :: proc(a: Line, b: Line) -> bool {
-  TODO()
+parallel_lines_intersect :: proc(a: Line, b: Line) -> bool {
+	// assumed that the lines are already known to be parallel
+	// if the lines both intersect the same point at x = 0, then they are colinear
+	// use y = mx + c
+	ma := (a.end.y - a.start.y) / (a.end.x - a.start.x)
+	ca := a.start.y - ma * a.start.x
+	mb := (b.end.y - b.start.y) / (b.end.x - b.start.x)
+	cb := b.start.y - mb * b.start.x
+	float_comparison_tolerance := min(ca, cb) / 1000
+	if abs(ca - cb) < float_comparison_tolerance {
+		// lines are colinear, therefore overlapping if ranges overlap
+		a_left := min(a.start.x, a.end.x)
+		a_right := max(a.start.x, a.end.x)
+		a_top := max(a.start.y, a.end.y)
+		a_bot := min(a.start.y, a.end.y)
+		b_left := min(b.start.x, b.end.x)
+		b_right := max(b.start.x, b.end.x)
+		b_top := max(b.start.y, b.end.y)
+		b_bot := min(b.start.y, b.end.y)
+		return !(a_left > b_right || b_left > a_right || a_bot > b_top || b_bot > a_top)
+	}
+	return false
 }
 
-horizontal_line_overlaps_quad :: proc(left, right, y: f32, quad_p: Pos, quad_d: Dim) -> bool {
-	if left >= right {panic("left must be less than right")}
-	quad_top := quad_p.y + quad_d.h
-	quad_bot := quad_p.y
-	quad_left := quad_p.x - quad_d.w / 2
-	quad_right := quad_p.x + quad_d.w / 2
-	return !(y > quad_top || y < quad_bot || right < quad_left || left > quad_right)
-}
-
-vertical_line_overlaps_quad :: proc(bot, top, x: f32, quad_p: Pos, quad_d: Dim) -> bool {
-	if bot >= top {panic("bot must be less than top")}
-	quad_top := quad_p.y + quad_d.h
-	quad_bot := quad_p.y
-	quad_left := quad_p.x - quad_d.w / 2
-	quad_right := quad_p.x + quad_d.w / 2
-	return !(x < quad_left || x > quad_right || bot > quad_top || top < quad_bot)
+line_intersects_quad :: proc(l: Line, quad_p: Pos, quad_d: Dim) -> bool {
+	top := quad_p.y + quad_d.h
+	bot := quad_p.y
+	left := quad_p.x - quad_d.w / 2
+	right := quad_p.x + quad_d.w / 2
+	q_top_left := Pos {
+		x = left,
+		y = top,
+	}
+	q_top_right := Pos {
+		x = right,
+		y = top,
+	}
+	q_bot_left := Pos {
+		x = left,
+		y = bot,
+	}
+	q_bot_right := Pos {
+		x = right,
+		y = bot,
+	}
+	if lines_intersect(l, {q_top_left, q_top_right}) {return true}
+	if lines_intersect(l, {q_top_right, q_bot_right}) {return true}
+	if lines_intersect(l, {q_bot_right, q_bot_left}) {return true}
+	if lines_intersect(l, {q_bot_left, q_top_left}) {return true}
+	return false
 }
 
 player_overlaps_quad :: proc(
@@ -102,37 +132,28 @@ player_overlaps_quad :: proc(
 	   quad_right < player_left {return NON_OVERLAPPING}
 
 	overlap_info: OverlapInfo = NON_OVERLAPPING
-	corner_allowance_x := (player_right - player_left) / 3
-	if corner_allowance_x <= 0 {panic("Unexpected player x-dimensions")}
-	corner_allowance_y := (player_top - player_bot) / 10
-	if corner_allowance_y <= 0 {panic("Unexpected player y-dimensions")}
-	overlap_info.bot = horizontal_line_overlaps_quad(
-		player_left + corner_allowance_x,
-		player_right - corner_allowance_x,
-		player_bot,
-		quad_p,
-		quad_d,
-	)
-	overlap_info.top = horizontal_line_overlaps_quad(
-		player_left + corner_allowance_x,
-		player_right - corner_allowance_x,
-		player_top,
-		quad_p,
-		quad_d,
-	)
-	overlap_info.left = vertical_line_overlaps_quad(
-		player_bot + corner_allowance_y,
-		player_top - corner_allowance_y,
-		player_left,
-		quad_p,
-		quad_d,
-	)
-	overlap_info.right = vertical_line_overlaps_quad(
-		player_bot + corner_allowance_y,
-		player_top - corner_allowance_y,
-		player_right,
-		quad_p,
-		quad_d,
-	)
+	corner_allowance_x := player_d.w / 3
+	corner_allowance_y := player_d.h / 10
+
+	bot_line := Line {
+		start = {x = player_left + corner_allowance_x, y = player_bot},
+		end = {x = player_right - corner_allowance_x, y = player_bot},
+	}
+	top_line := Line {
+		start = {x = player_left + corner_allowance_x, y = player_top},
+		end = {x = player_right - corner_allowance_x, y = player_top},
+	}
+	left_line := Line {
+		start = {x = player_left, y = player_top - corner_allowance_y},
+		end = {x = player_left, y = player_bot + corner_allowance_y},
+	}
+	right_line := Line {
+		start = {x = player_right, y = player_top - corner_allowance_y},
+		end = {x = player_right, y = player_bot + corner_allowance_y},
+	}
+	overlap_info.bot = line_intersects_quad(bot_line, quad_p, quad_d)
+	overlap_info.top = line_intersects_quad(top_line, quad_p, quad_d)
+	overlap_info.left = line_intersects_quad(left_line, quad_p, quad_d)
+	overlap_info.right = line_intersects_quad(right_line, quad_p, quad_d)
 	return overlap_info
 }
