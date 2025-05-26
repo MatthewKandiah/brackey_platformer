@@ -147,6 +147,18 @@ main :: proc() {
 					game.player.vel.y = max(0, game.player.vel.y)
 					game.player.is_grounded = true
 				}
+				if overlap_info.ne {
+					fmt.println("ne")
+				}
+				if overlap_info.nw {
+					fmt.println("nw")
+				}
+				if overlap_info.se {
+					fmt.println("se")
+				}
+				if overlap_info.sw {
+					fmt.println("sw")
+				}
 			}
 			if next_pos.y != game.player.pos.y {game.player.is_grounded = false}
 			game.player.pos = next_pos
