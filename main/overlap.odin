@@ -228,3 +228,69 @@ overlapping_colinear :: proc(t: ^testing.T) {
 	testing.expect(t, lines_intersect(line1, line2))
 	testing.expect(t, lines_intersect(line2, line1))
 }
+
+@(test)
+non_overlapping_line_and_quad :: proc(t: ^testing.T) {
+	line := Line {
+		start = {1, 2},
+		end   = {3, 4},
+	}
+	quad_p := Pos{8, 4}
+	quad_d := Dim{1, 1}
+	testing.expect(t, !line_intersects_quad(line, quad_p, quad_d))
+}
+
+@(test)
+overlaps_quad_top :: proc(t: ^testing.T) {
+	line := Line {
+		start = {3, 10},
+		end   = {6, 0},
+	}
+	quad_p := Pos{5, 0}
+	quad_d := Dim{10, 5}
+	testing.expect(t, line_intersects_quad(line, quad_p, quad_d))
+}
+
+@(test)
+overlaps_quad_bot :: proc(t: ^testing.T) {
+	line := Line {
+		start = {3, -10},
+		end   = {6, 0},
+	}
+	quad_p := Pos{5, 0}
+	quad_d := Dim{10, 5}
+	testing.expect(t, line_intersects_quad(line, quad_p, quad_d))
+}
+
+@(test)
+overlaps_quad_left :: proc(t: ^testing.T) {
+	line := Line {
+		start = {-5, -2},
+		end   = {5, 3},
+	}
+	quad_p := Pos{5, 0}
+	quad_d := Dim{10, 5}
+	testing.expect(t, line_intersects_quad(line, quad_p, quad_d))
+}
+
+@(test)
+overlaps_quad_right :: proc(t: ^testing.T) {
+	line := Line {
+		start = {15, 2},
+		end   = {5, 3},
+	}
+	quad_p := Pos{5, 0}
+	quad_d := Dim{10, 5}
+	testing.expect(t, line_intersects_quad(line, quad_p, quad_d))
+}
+
+@(test)
+line_inside_quad_overlaps_it :: proc(t: ^testing.T) {
+	line := Line {
+		start = {1, 2},
+		end   = {3, 4},
+	}
+	quad_p := Pos{0, 0}
+	quad_d := Dim{100, 100}
+	testing.expect(t, line_intersects_quad(line, quad_p, quad_d))
+}
