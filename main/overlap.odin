@@ -103,11 +103,21 @@ line_intersects_quad :: proc(l: Line, quad_p: Pos, quad_d: Dim) -> bool {
 		x = right,
 		y = bot,
 	}
+	if pos_contained_within_quad(l.start, quad_p, quad_d) &&
+	   pos_contained_within_quad(l.end, quad_p, quad_d) {return true}
 	if lines_intersect(l, {q_top_left, q_top_right}) {return true}
 	if lines_intersect(l, {q_top_right, q_bot_right}) {return true}
 	if lines_intersect(l, {q_bot_right, q_bot_left}) {return true}
 	if lines_intersect(l, {q_bot_left, q_top_left}) {return true}
 	return false
+}
+
+pos_contained_within_quad :: proc(p: Pos, quad_p: Pos, quad_d: Dim) -> bool {
+	top := quad_p.y + quad_d.h
+	bot := quad_p.y
+	left := quad_p.x - quad_d.w / 2
+	right := quad_p.x + quad_d.w / 2
+	return p.x > left && p.x < right && p.y < top && p.y > bot
 }
 
 player_overlaps_quad :: proc(

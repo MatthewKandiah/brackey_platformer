@@ -97,42 +97,41 @@ MapTile :: enum {
 }
 
 init_map :: proc() -> (m: Map) {
-	m.width = 1
+	m.width = 5
 	m.base_world_pos = MAP_BASE_WORLD_POS
 	m.tile_world_dim = MAP_TILE_WORLD_DIM
 	tiles := []MapTile {
-    .grass,
-		// // top
-		// .grass,
-		// .empty,
-		// .empty,
-		// .empty,
-		// .grass,
-		// //
-		// .dirt,
-		// .dirt,
-		// .empty,
-		// .empty,
-		// .dirt,
-		// //
-		// .grass,
-		// .grass,
-		// .empty,
-		// .grass,
-		// .grass,
-		// //
-		// .dirt,
-		// .dirt,
-		// .dirt,
-		// .dirt,
-		// .dirt,
-		// //
-		// .dirt,
-		// .dirt,
-		// .dirt,
-		// .dirt,
-		// .dirt,
-		// // bottom
+		// top
+		.grass,
+		.empty,
+		.empty,
+		.empty,
+		.grass,
+		//
+		.dirt,
+		.dirt,
+		.empty,
+		.empty,
+		.dirt,
+		//
+		.grass,
+		.grass,
+		.empty,
+		.grass,
+		.grass,
+		//
+		.dirt,
+		.dirt,
+		.dirt,
+		.dirt,
+		.dirt,
+		//
+		.dirt,
+		.dirt,
+		.dirt,
+		.dirt,
+		.dirt,
+		// bottom
 	}
 	m.tiles = make([]MapTile, len(tiles))
 	intrinsics.mem_copy_non_overlapping(
