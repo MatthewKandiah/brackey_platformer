@@ -158,7 +158,6 @@ player_overlaps_quad :: proc(
 	return overlap_info
 }
 
-// tests
 import "core:testing"
 @(test)
 non_overlapping_non_parallel :: proc(t: ^testing.T) {
@@ -171,6 +170,7 @@ non_overlapping_non_parallel :: proc(t: ^testing.T) {
 		end   = {2.5, 4},
 	}
 	testing.expect(t, !lines_intersect(line1, line2))
+	testing.expect(t, !lines_intersect(line2, line1))
 }
 
 @(test)
@@ -184,6 +184,7 @@ non_overlapping_parallel :: proc(t: ^testing.T) {
 		end   = {7, 7},
 	}
 	testing.expect(t, !lines_intersect(line1, line2))
+	testing.expect(t, !lines_intersect(line2, line1))
 }
 
 @(test)
@@ -197,6 +198,7 @@ non_overlapping_colinear :: proc(t: ^testing.T) {
 		end   = {7, 8},
 	}
 	testing.expect(t, !lines_intersect(line1, line2))
+	testing.expect(t, !lines_intersect(line2, line1))
 }
 
 @(test)
@@ -210,6 +212,7 @@ overlapping_non_parallel :: proc(t: ^testing.T) {
 		end   = {4, -10},
 	}
 	testing.expect(t, lines_intersect(line1, line2))
+	testing.expect(t, lines_intersect(line2, line1))
 }
 
 @(test)
@@ -223,4 +226,5 @@ overlapping_colinear :: proc(t: ^testing.T) {
 		end   = {7, 8},
 	}
 	testing.expect(t, lines_intersect(line1, line2))
+	testing.expect(t, lines_intersect(line2, line1))
 }
