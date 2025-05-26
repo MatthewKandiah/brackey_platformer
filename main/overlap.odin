@@ -1,28 +1,29 @@
 package main
 
 OverlapInfo :: struct {
-	top:   bool,
-	bot:   bool,
-	left:  bool,
-	right: bool,
+	n:  bool,
+	ne: bool,
+	e:  bool,
+	se: bool,
+	s:  bool,
+	sw: bool,
+	w:  bool,
+	nw: bool,
 }
 
 any_overlapping :: proc(using o: OverlapInfo) -> bool {
-	return top || bot || left || right
+	return n || e || s || w || ne || se || sw || nw
 }
 
 NON_OVERLAPPING :: OverlapInfo {
-	top   = false,
-	bot   = false,
-	left  = false,
-	right = false,
-}
-
-ALL_OVERLAPPING :: OverlapInfo {
-	top   = true,
-	bot   = true,
-	left  = true,
-	right = true,
+	n  = false,
+	ne = false,
+	e  = false,
+	se = false,
+	s  = false,
+	sw = false,
+	w  = false,
+	nw = false,
 }
 
 Line :: struct {
@@ -161,10 +162,30 @@ player_overlaps_quad :: proc(
 		start = {x = player_right, y = player_top - corner_allowance_y},
 		end = {x = player_right, y = player_bot + corner_allowance_y},
 	}
-	overlap_info.bot = line_intersects_quad(bot_line, quad_p, quad_d)
-	overlap_info.top = line_intersects_quad(top_line, quad_p, quad_d)
-	overlap_info.left = line_intersects_quad(left_line, quad_p, quad_d)
-	overlap_info.right = line_intersects_quad(right_line, quad_p, quad_d)
+	bot_right_line := Line {
+		start = {x = player_right - corner_allowance_x, y = player_bot},
+		end = {x = player_right, y = player_bot + corner_allowance_y},
+	}
+	bot_left_line := Line {
+		start = {x = player_left + corner_allowance_x, y = player_bot},
+		end = {x = player_left, y = player_bot + corner_allowance_y},
+	}
+	top_right_line := Line {
+		start = {x = player_right - corner_allowance_x, y = player_top},
+		end = {x = player_right, y = player_top - corner_allowance_y},
+	}
+	top_left_line := Line {
+		start = {x = player_left + corner_allowance_x, y = player_top},
+		end = {x = player_left, y = player_top - corner_allowance_y},
+	}
+	overlap_info.s = line_intersects_quad(bot_line, quad_p, quad_d)
+	overlap_info.n = line_intersects_quad(top_line, quad_p, quad_d)
+	overlap_info.w = line_intersects_quad(left_line, quad_p, quad_d)
+	overlap_info.e = line_intersects_quad(right_line, quad_p, quad_d)
+	overlap_info.se = line_intersects_quad(bot_right_line, quad_p, quad_d)
+	overlap_info.sw = line_intersects_quad(bot_left_line, quad_p, quad_d)
+	overlap_info.ne = line_intersects_quad(top_right_line, quad_p, quad_d)
+	overlap_info.nw = line_intersects_quad(top_left_line, quad_p, quad_d)
 	return overlap_info
 }
 

@@ -132,17 +132,17 @@ main :: proc() {
 					map_tile_world_pos,
 					game.game_map.tile_world_dim,
 				)
-				if overlap_info.left {
+				if overlap_info.w {
 					next_pos.x = game.player.pos.x
 				}
-				if overlap_info.right {
+				if overlap_info.e {
 					next_pos.x = game.player.pos.x
 				}
-				if overlap_info.top {
+				if overlap_info.n {
 					next_pos.y = game.player.pos.y
 					game.player.vel.y = min(0, game.player.vel.y)
 				}
-				if overlap_info.bot {
+				if overlap_info.s {
 					next_pos.y = game.player.pos.y
 					game.player.vel.y = max(0, game.player.vel.y)
 					game.player.is_grounded = true
