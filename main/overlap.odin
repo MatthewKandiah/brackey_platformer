@@ -49,7 +49,7 @@ lines_intersect :: proc(a: Line, b: Line) -> bool {
 	u_num := (y1 - y2) * (x1 - x3) - (x1 - x2) * (y1 - y3)
 	den := (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
 
-	single_intersection_exists := den == 0
+	single_intersection_exists := den != 0
 	if !single_intersection_exists {return parallel_lines_intersect(a, b)}
 
 	// Note - can conclude if 0 <= t <= 1 and 0 <= u <= 1 without divisions to improve performance
@@ -156,4 +156,71 @@ player_overlaps_quad :: proc(
 	overlap_info.left = line_intersects_quad(left_line, quad_p, quad_d)
 	overlap_info.right = line_intersects_quad(right_line, quad_p, quad_d)
 	return overlap_info
+}
+
+// tests
+import "core:testing"
+@(test)
+non_overlapping_non_parallel :: proc(t: ^testing.T) {
+	line1 := Line {
+		start = {1, 2},
+		end   = {3, 4},
+	}
+	line2 := Line {
+		start = {2, 6},
+		end   = {2.5, 4},
+	}
+	testing.expect(t, !lines_intersect(line1, line2))
+}
+
+@(test)
+non_overlapping_parallel :: proc(t: ^testing.T) {
+	line1 := Line {
+		start = {1, 2},
+		end   = {3, 4},
+	}
+	line2 := Line {
+		start = {6, 6},
+		end   = {7, 7},
+	}
+	testing.expect(t, !lines_intersect(line1, line2))
+}
+
+@(test)
+non_overlapping_colinear :: proc(t: ^testing.T) {
+	line1 := Line {
+		start = {1, 2},
+		end   = {3, 4},
+	}
+	line2 := Line {
+		start = {6, 7},
+		end   = {7, 8},
+	}
+	testing.expect(t, !lines_intersect(line1, line2))
+}
+
+@(test)
+overlapping_non_parallel :: proc(t: ^testing.T) {
+	line1 := Line {
+		start = {1, 2},
+		end   = {3, 4},
+	}
+	line2 := Line {
+		start = {2, 6},
+		end   = {4, -10},
+	}
+	testing.expect(t, lines_intersect(line1, line2))
+}
+
+@(test)
+overlapping_colinear :: proc(t: ^testing.T) {
+	line1 := Line {
+		start = {1, 2},
+		end   = {3, 4},
+	}
+	line2 := Line {
+		start = {2, 3},
+		end   = {7, 8},
+	}
+	testing.expect(t, lines_intersect(line1, line2))
 }
