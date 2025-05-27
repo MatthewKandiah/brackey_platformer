@@ -143,7 +143,7 @@ player_overlaps_quad :: proc(
 	   quad_right < player_left {return NON_OVERLAPPING}
 
 	overlap_info: OverlapInfo = NON_OVERLAPPING
-	corner_allowance_x := player_d.w / 3
+	corner_allowance_x := player_d.w / 10
 	corner_allowance_y := player_d.h / 10
 
 	bot_line := Line {
