@@ -6,6 +6,7 @@ import "core:fmt"
 import "core:math/linalg/glsl"
 import "core:time"
 import glfw "vendor:glfw"
+import ma "vendor:miniaudio"
 import vk "vendor:vulkan"
 
 MAX_KEY_EVENT_COUNT :: 10
@@ -16,6 +17,7 @@ GlobalContext :: struct {
 	key_events_count:    int,
 	keys_held:           KeysPressed,
 	running:             bool,
+	sound_engine:        ^ma.engine,
 }
 
 KeysPressed :: struct {
@@ -35,6 +37,7 @@ main :: proc() {
 		game_map = init_map(),
 		player   = init_player(),
 	}
+	gc.sound_engine = init_sound()
 
 	renderer := init_renderer()
 	glfw.SetWindowUserPointer(renderer.window, &gc)
@@ -95,6 +98,13 @@ main :: proc() {
 						if game.player.is_grounded {
 							game.player.vel.y = JUMP_SPEED
 							game.player.is_grounded = false
+							if res := ma.engine_play_sound(
+								gc.sound_engine,
+								"brackeys_platformer_assets/sounds/jump.wav",
+								nil,
+							); res != ma.result.SUCCESS {
+								fmt.eprintln("failed to play jump.wav")
+							}
 						}
 					}
 				}
