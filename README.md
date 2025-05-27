@@ -1,5 +1,4 @@
 # TODO
-- sounds - beep on jump, on coin collected, on death
 - more interesting map to jump around
 - collectible coins that vanish when you collide with them
 - die when you fall too far
