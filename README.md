@@ -1,5 +1,4 @@
 # TODO
-- collectible coins that vanish when you collide with them
 - die when you fall too far
 
 # Platformer
