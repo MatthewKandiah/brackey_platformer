@@ -169,6 +169,30 @@ main :: proc() {
 			game.player.pos = next_pos
 			camera.pos = game.player.pos
 			game.player.vel.y -= FALLING_ACCEL
+
+			{ 	// handle player-coin collision
+				if any_overlapping(
+					player_overlaps_quad(
+						game.player.pos,
+						game.player.collision_dim,
+						game.coin.pos,
+						game.coin.collision_dim,
+					),
+				) {
+					ma.engine_play_sound(
+						gc.sound_engine,
+						"brackeys_platformer_assets/sounds/coin.wav",
+						nil,
+					)
+					if game.coin.pos == COIN_POS1 {
+						game.coin.pos = COIN_POS2
+					} else if game.coin.pos == COIN_POS2 {
+						game.coin.pos = COIN_POS1
+					} else {
+						unreachable()
+					}
+				}
+			}
 		}
 
 		{ 	// draw current game state

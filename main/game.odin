@@ -56,12 +56,18 @@ background_to_drawable :: proc() -> Drawable {
 
 Coin :: struct {
 	pos:                  Pos,
+	collision_dim:        Dim,
 	animation_frame:      int,
 	animation_frame_held: int,
 }
 
 init_coin :: proc() -> Coin {
-	return {pos = COIN_POS1, animation_frame = 0, animation_frame_held = 0}
+	return {
+		pos = COIN_POS1,
+		collision_dim = {0.2, 0.2},
+		animation_frame = 0,
+		animation_frame_held = 0,
+	}
 }
 
 coin_to_drawable :: proc(coin: Coin) -> Drawable {
