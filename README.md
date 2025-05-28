@@ -1,6 +1,3 @@
-# TODO
-- die when you fall too far
-
 # Platformer
 Let's build a more thought through game using [Brackeys' Platformer Bundle](https://brackeysgames.itch.io/brackeys-platformer-bundle)
 
