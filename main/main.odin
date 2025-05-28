@@ -36,6 +36,7 @@ main :: proc() {
 	game := Game {
 		game_map = init_map(),
 		player   = init_player(),
+		coin     = init_coin(),
 	}
 	gc.sound_engine = init_sound()
 
@@ -57,7 +58,11 @@ main :: proc() {
 		{ 	// update game state
 			game.player.animation_frame_held += 1
 			if game.player.animation_frame_held >= game.player.animation.duration_frames {
-				advance_animation_frame(&game)
+				advance_player_animation_frame(&game)
+			}
+			game.coin.animation_frame_held += 1
+			if game.coin.animation_frame_held >= coin_spin_animation.duration_frames {
+				advance_coin_animation_frame(&game)
 			}
 
 			speed :: 0.04

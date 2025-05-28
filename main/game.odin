@@ -8,8 +8,11 @@ import "vendor:glfw"
 Game :: struct {
 	game_map: Map,
 	player:   Player,
+	coin:     Coin,
 }
 
+COIN_POS1 :: Pos{2, 1.25}
+COIN_POS2 :: Pos{0, 1.25}
 JUMP_SPEED :: 0.05
 FALLING_SPEED :: 0.04
 FALLING_ACCEL :: 0.0025
@@ -28,6 +31,9 @@ game_to_drawables :: proc(game: Game) -> []Drawable {
 	)
 	total_drawable_count += map_drawable_count
 
+	DRAWABLE_BACKING_BUFFER[total_drawable_count] = coin_to_drawable(game.coin)
+	total_drawable_count += 1
+
 	/*
     left-right flipping logic assumes the player will be the last drawable drawn each frame
   */
@@ -45,6 +51,26 @@ background_to_drawable :: proc() -> Drawable {
 		tex_idx = tex_idx,
 		tex_base_pos = tex_base_pos,
 		tex_dim = tex_dim,
+	}
+}
+
+Coin :: struct {
+	pos:                  Pos,
+	animation_frame:      int,
+	animation_frame_held: int,
+}
+
+init_coin :: proc() -> Coin {
+	return {pos = COIN_POS1, animation_frame = 0, animation_frame_held = 0}
+}
+
+coin_to_drawable :: proc(coin: Coin) -> Drawable {
+	return Drawable {
+		pos = coin.pos,
+		dim = {0.5, 0.5},
+		tex_idx = coin_spin_animation.tex_idx,
+		tex_base_pos = coin_spin_animation.tex_base_pos_list[coin.animation_frame],
+		tex_dim = coin_spin_animation.tex_dim,
 	}
 }
 
@@ -260,10 +286,16 @@ handle_key_press :: proc "c" (
 	user_ptr.key_events_count += 1
 }
 
-advance_animation_frame :: proc(game: ^Game) {
+advance_player_animation_frame :: proc(game: ^Game) {
 	game.player.animation_frame_held = 0
 	game.player.animation_frame += 1
 	game.player.animation_frame %= len(game.player.animation.tex_base_pos_list)
+}
+
+advance_coin_animation_frame :: proc(game: ^Game) {
+	game.coin.animation_frame_held = 0
+	game.coin.animation_frame += 1
+	game.coin.animation_frame %= len(coin_spin_animation.tex_base_pos_list)
 }
 
 set_new_animation :: proc(game: ^Game, new_anim: Animation) {

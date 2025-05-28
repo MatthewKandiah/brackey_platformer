@@ -6,6 +6,7 @@ package main
 AnimationType :: enum {
 	player_idle,
 	player_run,
+	coin_spin,
 }
 
 Animation :: struct {
@@ -47,4 +48,25 @@ player_run := Animation {
 		{224, 96},
 	},
 	duration_frames   = 6,
+}
+
+coin_spin_animation := Animation {
+	type              = .coin_spin,
+	tex_idx           = 1,
+	tex_dim           = {16, 16},
+	tex_base_pos_list = {
+		{0, 0},
+		{16, 0},
+		{32, 0},
+		{48, 0},
+		{64, 0},
+		{80, 0},
+		{96, 0},
+		{112, 0},
+		{128, 0},
+		{144, 0},
+		{160, 0},
+		{176, 0},
+	},
+	duration_frames   = 8,
 }
