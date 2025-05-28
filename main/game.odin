@@ -11,6 +11,7 @@ Game :: struct {
 	coin:     Coin,
 }
 
+DEATH_Y :: -5
 COIN_POS1 :: Pos{2, 1.25}
 COIN_POS2 :: Pos{0, 1.25}
 JUMP_SPEED :: 0.05
@@ -89,6 +90,7 @@ Player :: struct {
 	animation_frame:      int,
 	animation_frame_held: int,
 	is_facing_left:       bool,
+	is_alive:             bool,
 }
 
 init_player :: proc() -> Player {
@@ -101,6 +103,7 @@ init_player :: proc() -> Player {
 		animation_frame = 0,
 		animation_frame_held = 0,
 		is_facing_left = false,
+		is_alive = true,
 	}
 }
 

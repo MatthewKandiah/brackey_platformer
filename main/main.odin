@@ -167,7 +167,17 @@ main :: proc() {
 			}
 			if next_pos.y != game.player.pos.y {game.player.is_grounded = false}
 			game.player.pos = next_pos
-			camera.pos = game.player.pos
+			if game.player.is_alive && game.player.pos.y < DEATH_Y {
+				game.player.is_alive = false
+				ma.engine_play_sound(
+					gc.sound_engine,
+					"brackeys_platformer_assets/sounds/hurt.wav",
+					nil,
+				)
+			}
+			if game.player.is_alive {
+				camera.pos = game.player.pos
+			}
 			game.player.vel.y -= FALLING_ACCEL
 
 			{ 	// handle player-coin collision
